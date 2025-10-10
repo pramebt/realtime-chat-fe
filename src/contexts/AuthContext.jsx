@@ -24,7 +24,8 @@ export const AuthProvider = ({ children }) => {
 
   // ตรวจสอบ token เมื่อ component mount
   useEffect(() => {
-    const savedToken = Cookies.get('token');
+    // ลองอ่าน token จาก localStorage ก่อน แล้วค่อยจาก cookies
+    const savedToken = localStorage.getItem('token') || Cookies.get('token');
     if (savedToken) {
       setToken(savedToken);
       axios.defaults.headers.common['Authorization'] = `Bearer ${savedToken}`;
@@ -58,7 +59,8 @@ export const AuthProvider = ({ children }) => {
 
       const { user: userData, token: newToken } = response.data.data;
       
-      // บันทึก token ใน cookie
+      // บันทึก token ใน localStorage และ cookies
+      localStorage.setItem('token', newToken);
       Cookies.set('token', newToken, { expires: 7 }); // 7 วัน
       
       // ตั้งค่า axios header
@@ -85,7 +87,8 @@ export const AuthProvider = ({ children }) => {
 
       const { user: userData, token: newToken } = response.data.data;
       
-      // บันทึก token ใน cookie
+      // บันทึก token ใน localStorage และ cookies
+      localStorage.setItem('token', newToken);
       Cookies.set('token', newToken, { expires: 7 });
       
       // ตั้งค่า axios header
@@ -103,6 +106,8 @@ export const AuthProvider = ({ children }) => {
 
   // ออกจากระบบ
   const logout = () => {
+    // ลบ token จาก localStorage และ cookies
+    localStorage.removeItem('token');
     Cookies.remove('token');
     delete axios.defaults.headers.common['Authorization'];
     setUser(null);

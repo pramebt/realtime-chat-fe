@@ -1,0 +1,181 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useAuth } from '../../contexts/AuthContext';
+import ProtectedRoute from '../../components/ProtectedRoute';
+import RoomList from '../../components/chat/RoomList';
+import MessageList from '../../components/chat/MessageList';
+import MessageInput from '../../components/chat/MessageInput';
+import socketService from '../../services/socket';
+import { roomAPI, messageAPI } from '../../services/api';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { LogOut, MessageSquare } from 'lucide-react';
+
+const ChatPage = () => {
+  const { user, token, logout } = useAuth();
+  const [rooms, setRooms] = useState([]);
+  const [selectedRoom, setSelectedRoom] = useState(null);
+  const [messages, setMessages] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // Load rooms on mount
+  useEffect(() => {
+    loadRooms();
+  }, []);
+
+  // Connect Socket.IO when token is available
+  useEffect(() => {
+    if (token) {
+      socketService.connect(token);
+      
+      // Listen for new messages
+      socketService.onReceiveMessage((message) => {
+        setMessages(prev => [...prev, message]);
+      });
+
+      // Listen for user joined
+      socketService.onUserJoined((data) => {
+        console.log(`${data.username} joined the room`);
+      });
+
+      // Listen for user left
+      socketService.onUserLeft((data) => {
+        console.log(`${data.username} left the room`);
+      });
+
+      // Listen for errors
+      socketService.onError((error) => {
+        console.error('Socket error:', error);
+      });
+    }
+
+    return () => {
+      socketService.removeAllListeners();
+    };
+  }, [token]);
+
+  const loadRooms = async () => {
+    try {
+      const response = await roomAPI.getRooms();
+      setRooms(response.data);
+    } catch (error) {
+      console.error('Failed to load rooms:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRoomSelect = async (room) => {
+    // Leave previous room
+    if (selectedRoom) {
+      socketService.leaveRoom(selectedRoom.id);
+    }
+
+    // Join new room
+    setSelectedRoom(room);
+    socketService.joinRoom(room.id);
+
+    // Load messages for the room
+    try {
+      const response = await messageAPI.getMessages(room.id);
+      setMessages(response.data);
+    } catch (error) {
+      console.error('Failed to load messages:', error);
+      setMessages([]);
+    }
+  };
+
+  const handleSendMessage = (message) => {
+    if (selectedRoom && message.trim()) {
+      socketService.sendMessage(selectedRoom.id, message.trim());
+    }
+  };
+
+  const handleLogout = () => {
+    socketService.disconnect();
+    logout();
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  return (
+    <ProtectedRoute>
+      <div className="h-screen flex bg-gray-50">
+        {/* Sidebar */}
+        <div className="w-1/4 bg-white border-r border-gray-200 flex flex-col shadow-sm">
+          {/* Header */}
+          <div className="p-6 border-b border-gray-100">
+            <div className="flex items-center justify-between">
+              <h1 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
+                <MessageSquare className="h-5 w-5 text-gray-600" />
+                Messages
+              </h1>
+              <Button
+                onClick={handleLogout}
+                variant="ghost"
+                size="sm"
+                className="text-gray-500 hover:text-primary hover:bg-primary/10"
+              >
+                <LogOut className="h-4 w-4" />
+              </Button>
+            </div>
+            <p className="text-sm text-gray-500 mt-2">
+              {user?.username}
+            </p>
+          </div>
+
+          {/* Room List */}
+          <RoomList
+            rooms={rooms}
+            selectedRoom={selectedRoom}
+            onRoomSelect={handleRoomSelect}
+            onRoomCreate={loadRooms}
+          />
+        </div>
+
+        {/* Chat Area */}
+        <div className="flex-1 flex flex-col bg-white">
+          {selectedRoom ? (
+            <>
+              {/* Chat Header */}
+              <div className="p-6 border-b border-gray-100 bg-white">
+                <h2 className="text-lg font-medium text-gray-900">
+                  {selectedRoom.name}
+                </h2>
+              </div>
+
+              {/* Messages */}
+              <div className="flex-1 overflow-hidden bg-gray-50">
+                <MessageList messages={messages} currentUser={user} />
+              </div>
+
+              {/* Message Input */}
+              <div className="bg-white border-t border-gray-100">
+                <MessageInput onSendMessage={handleSendMessage} />
+              </div>
+            </>
+          ) : (
+            <div className="flex-1 flex items-center justify-center bg-gray-50">
+              <div className="text-center text-gray-400">
+                <MessageSquare className="h-16 w-16 mx-auto mb-4 opacity-30" />
+                <h3 className="text-lg font-medium text-gray-500">No conversation selected</h3>
+                <p className="text-sm mt-1 text-gray-400">
+                  Choose a conversation to start messaging
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </ProtectedRoute>
+  );
+};
+
+export default ChatPage;

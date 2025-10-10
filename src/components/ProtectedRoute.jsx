@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
-export default function ProtectedRoute({ children }) {
+const ProtectedRoute = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
   const router = useRouter();
 
@@ -14,7 +14,6 @@ export default function ProtectedRoute({ children }) {
     }
   }, [isAuthenticated, loading, router]);
 
-  // แสดง loading ขณะตรวจสอบ authentication
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -23,11 +22,11 @@ export default function ProtectedRoute({ children }) {
     );
   }
 
-  // ถ้ายังไม่ authenticated ให้ไม่แสดงอะไร
   if (!isAuthenticated) {
     return null;
   }
 
-  // แสดง children เมื่อ authenticated แล้ว
   return children;
 }
+
+export default ProtectedRoute;
