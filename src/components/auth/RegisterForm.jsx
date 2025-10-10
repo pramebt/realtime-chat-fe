@@ -49,11 +49,11 @@ const RegisterForm = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-8 lg:py-12 px-4 sm:px-6 lg:px-8">
       <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold">Register</CardTitle>
-          <CardDescription>
+        <CardHeader className="text-center p-6 lg:p-8">
+          <CardTitle className="text-xl lg:text-2xl font-bold">Register</CardTitle>
+          <CardDescription className="text-sm lg:text-base">
             Already have an account?{' '}
             <a href="/login" className="font-medium text-primary hover:underline">
               Login
@@ -61,12 +61,12 @@ const RegisterForm = () => {
           </CardDescription>
         </CardHeader>
         
-        <CardContent>
+        <CardContent className="p-6 lg:p-8">
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 lg:space-y-6">
               {error && (
                 <Alert variant="destructive">
-                  <AlertDescription>{error}</AlertDescription>
+                  <AlertDescription className="text-sm">{error}</AlertDescription>
                 </Alert>
               )}
               
@@ -75,11 +75,12 @@ const RegisterForm = () => {
                 name="username"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Username</FormLabel>
+                    <FormLabel className="text-sm lg:text-base">Username</FormLabel>
                     <FormControl>
                       <Input
                         type="text"
                         placeholder="Enter your username"
+                        className="h-10 lg:h-12 text-sm lg:text-base"
                         {...field}
                       />
                     </FormControl>
@@ -93,11 +94,12 @@ const RegisterForm = () => {
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email</FormLabel>
+                    <FormLabel className="text-sm lg:text-base">Email</FormLabel>
                     <FormControl>
                       <Input
                         type="email"
                         placeholder="Enter your email"
+                        className="h-10 lg:h-12 text-sm lg:text-base"
                         {...field}
                       />
                     </FormControl>
@@ -111,11 +113,12 @@ const RegisterForm = () => {
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Password</FormLabel>
+                    <FormLabel className="text-sm lg:text-base">Password</FormLabel>
                     <FormControl>
                       <Input
                         type="password"
                         placeholder="Enter your password (at least 6 characters)"
+                        className="h-10 lg:h-12 text-sm lg:text-base"
                         {...field}
                       />
                     </FormControl>
@@ -129,11 +132,12 @@ const RegisterForm = () => {
                 name="confirmPassword"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Confirm Password</FormLabel>
+                    <FormLabel className="text-sm lg:text-base">Confirm Password</FormLabel>
                     <FormControl>
                       <Input
                         type="password"
                         placeholder="Enter your password again"
+                        className="h-10 lg:h-12 text-sm lg:text-base"
                         {...field}
                       />
                     </FormControl>
@@ -144,7 +148,7 @@ const RegisterForm = () => {
 
               <Button
                 type="submit"
-                className="w-full"
+                className="w-full h-10 lg:h-12 text-sm lg:text-base"
                 disabled={loading}
               >
                 {loading ? 'Registering...' : 'Register'}

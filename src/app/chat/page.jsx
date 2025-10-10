@@ -67,6 +67,16 @@ const ChatPage = () => {
   };
 
   const handleRoomSelect = async (room) => {
+    // If room is null, clear selection
+    if (!room) {
+      if (selectedRoom) {
+        socketService.leaveRoom(selectedRoom.id);
+      }
+      setSelectedRoom(null);
+      setMessages([]);
+      return;
+    }
+
     // Leave previous room
     if (selectedRoom) {
       socketService.leaveRoom(selectedRoom.id);
@@ -108,14 +118,15 @@ const ChatPage = () => {
   return (
     <ProtectedRoute>
       <div className="h-screen flex bg-gray-50">
-        {/* Sidebar */}
-        <div className="w-1/4 bg-white border-r border-gray-200 flex flex-col shadow-sm">
+        {/* Sidebar - Hidden on mobile when chat is selected */}
+        <div className={`${selectedRoom ? 'hidden lg:flex' : 'flex'} w-full lg:w-1/4 bg-white border-r border-gray-200 flex-col shadow-sm`}>
           {/* Header */}
-          <div className="p-6 border-b border-gray-100">
+          <div className="p-4 lg:p-6 border-b border-gray-100">
             <div className="flex items-center justify-between">
-              <h1 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
+              <h1 className="text-lg lg:text-xl font-semibold text-gray-900 flex items-center gap-2">
                 <MessageSquare className="h-5 w-5 text-gray-600" />
-                Messages
+                <span className="hidden sm:inline">Messages</span>
+                <span className="sm:hidden">Chats</span>
               </h1>
               <Button
                 onClick={handleLogout}
@@ -137,16 +148,32 @@ const ChatPage = () => {
             selectedRoom={selectedRoom}
             onRoomSelect={handleRoomSelect}
             onRoomCreate={loadRooms}
+            onRoomDeleted={(roomId) => {
+              if (selectedRoom?.id === roomId) {
+                handleRoomSelect(null);
+              }
+            }}
           />
         </div>
 
         {/* Chat Area */}
-        <div className="flex-1 flex flex-col bg-white">
+        <div className={`${selectedRoom ? 'flex' : 'hidden lg:flex'} flex-1 flex-col bg-white`}>
           {selectedRoom ? (
             <>
               {/* Chat Header */}
-              <div className="p-6 border-b border-gray-100 bg-white">
-                <h2 className="text-lg font-medium text-gray-900">
+              <div className="p-4 lg:p-6 border-b border-gray-100 bg-white flex items-center gap-3">
+                {/* Back button for mobile */}
+                <Button
+                  onClick={() => setSelectedRoom(null)}
+                  variant="ghost"
+                  size="sm"
+                  className="lg:hidden text-gray-500 hover:text-primary hover:bg-primary/10"
+                >
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                </Button>
+                <h2 className="text-base lg:text-lg font-medium text-gray-900 truncate">
                   {selectedRoom.name}
                 </h2>
               </div>
@@ -163,7 +190,7 @@ const ChatPage = () => {
             </>
           ) : (
             <div className="flex-1 flex items-center justify-center bg-gray-50">
-              <div className="text-center text-gray-400">
+              <div className="text-center text-gray-400 px-4">
                 <MessageSquare className="h-16 w-16 mx-auto mb-4 opacity-30" />
                 <h3 className="text-lg font-medium text-gray-500">No conversation selected</h3>
                 <p className="text-sm mt-1 text-gray-400">

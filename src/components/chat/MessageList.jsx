@@ -46,20 +46,20 @@ const MessageList = ({ messages, currentUser }) => {
   }, {});
 
   return (
-    <div className="flex-1 overflow-y-auto p-4 space-y-4">
+    <div className="flex-1 overflow-y-auto p-3 lg:p-4 space-y-3 lg:space-y-4">
       {Object.keys(groupedMessages).length === 0 ? (
         <div className="flex items-center justify-center h-full">
-          <div className="text-center text-gray-400">
-            <p className="text-gray-500">No messages yet</p>
-            <p className="text-sm text-gray-400">Start the conversation!</p>
+          <div className="text-center text-gray-400 px-4">
+            <p className="text-gray-500 text-sm lg:text-base">No messages yet</p>
+            <p className="text-xs lg:text-sm text-gray-400">Start the conversation!</p>
           </div>
         </div>
       ) : (
         Object.entries(groupedMessages).map(([date, dayMessages]) => (
           <div key={date}>
             {/* Date Separator */}
-            <div className="flex items-center justify-center my-6">
-              <div className="bg-gray-200 text-gray-500 px-3 py-1 rounded-full text-xs font-medium">
+            <div className="flex items-center justify-center my-4 lg:my-6">
+              <div className="bg-gray-200 text-gray-500 px-2 lg:px-3 py-1 rounded-full text-xs font-medium">
                 {formatDate(dayMessages[0].timestamp || dayMessages[0].createdAt)}
               </div>
             </div>
@@ -75,14 +75,14 @@ const MessageList = ({ messages, currentUser }) => {
                   <div
                     key={message.id}
                     className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'} ${
-                      showAvatar ? 'mt-4' : 'mt-1'
+                      showAvatar ? 'mt-3 lg:mt-4' : 'mt-1'
                     }`}
                   >
-                    <div className={`flex max-w-xs lg:max-w-md ${isCurrentUser ? 'flex-row-reverse' : 'flex-row'}`}>
+                    <div className={`flex max-w-[85%] lg:max-w-md ${isCurrentUser ? 'flex-row-reverse' : 'flex-row'}`}>
                       {/* Avatar */}
                       {showAvatar && (
-                        <div className={`flex-shrink-0 ${isCurrentUser ? 'ml-2' : 'mr-2'}`}>
-                          <Avatar className="h-8 w-8">
+                        <div className={`flex-shrink-0 ${isCurrentUser ? 'ml-2 lg:ml-2' : 'mr-2 lg:mr-2'}`}>
+                          <Avatar className="h-6 w-6 lg:h-8 lg:w-8">
                             <AvatarFallback className="text-xs bg-gray-200 text-gray-600">
                               {message.user?.username?.charAt(0).toUpperCase() || '?'}
                             </AvatarFallback>
@@ -100,7 +100,7 @@ const MessageList = ({ messages, currentUser }) => {
                         )}
 
                         {/* Message Bubble */}
-                        <div className={`max-w-full rounded-2xl px-4 py-2 ${
+                        <div className={`max-w-full rounded-2xl px-3 lg:px-4 py-2 ${
                           isCurrentUser
                             ? 'bg-primary text-primary-foreground'
                             : 'bg-white text-gray-900 shadow-sm border border-gray-100'
