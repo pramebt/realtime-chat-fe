@@ -4,13 +4,13 @@ import { useEffect, useRef } from 'react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Card, CardContent } from '@/components/ui/card';
 
-const MessageList = ({ messages, currentUser }) => {
+const MessageList = ({ messages, currentUser, typingUsers = [] }) => {
   const messagesEndRef = useRef(null);
 
-  // Scroll to bottom when new messages arrive
+  // Scroll to bottom when new messages arrive or typing users change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  }, [messages, typingUsers]);
 
   const formatTime = (timestamp) => {
     const date = new Date(timestamp);
@@ -121,6 +121,26 @@ const MessageList = ({ messages, currentUser }) => {
           </div>
         ))
       )}
+      
+      {/* Typing Indicator */}
+      {typingUsers.length > 0 && (
+        <div className="flex justify-start mt-2">
+          <div className="flex items-center space-x-2 bg-gray-100 rounded-2xl px-3 py-2 max-w-xs">
+            <div className="flex space-x-1">
+              <div className="w-2 h-2 bg-gray-400 rounded-full typing-dot"></div>
+              <div className="w-2 h-2 bg-gray-400 rounded-full typing-dot"></div>
+              <div className="w-2 h-2 bg-gray-400 rounded-full typing-dot"></div>
+            </div>
+            <span className="text-xs text-gray-500">
+              {typingUsers.length === 1 
+                ? `${typingUsers[0].username} is typing...`
+                : `${typingUsers.length} people are typing...`
+              }
+            </span>
+          </div>
+        </div>
+      )}
+      
       <div ref={messagesEndRef} />
     </div>
   );

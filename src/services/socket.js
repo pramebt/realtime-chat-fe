@@ -102,6 +102,34 @@ class SocketService {
     }
   }
 
+  // ส่งการแจ้งเตือนว่ากำลังพิมพ์
+  startTyping(roomId) {
+    if (this.socket && this.isConnected) {
+      this.socket.emit('typing', roomId);
+    }
+  }
+
+  // ส่งการแจ้งเตือนว่าหยุดพิมพ์
+  stopTyping(roomId) {
+    if (this.socket && this.isConnected) {
+      this.socket.emit('stop-typing', roomId);
+    }
+  }
+
+  // ฟังเมื่อมีคนกำลังพิมพ์
+  onUserTyping(callback) {
+    if (this.socket) {
+      this.socket.on('user_typing', callback);
+    }
+  }
+
+  // ฟังเมื่อมีคนหยุดพิมพ์
+  onUserStopTyping(callback) {
+    if (this.socket) {
+      this.socket.on('user_stop_typing', callback);
+    }
+  }
+
   // ลบ event listeners
   removeAllListeners() {
     if (this.socket) {

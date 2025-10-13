@@ -18,6 +18,7 @@ const ChatPage = () => {
   const [selectedRoom, setSelectedRoom] = useState(null);
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [typingUsers, setTypingUsers] = useState([]);
 
   // Load rooms on mount
   useEffect(() => {
@@ -48,12 +49,30 @@ const ChatPage = () => {
       socketService.onError((error) => {
         console.error('Socket error:', error);
       });
+
+      // Listen for typing events
+      socketService.onUserTyping((data) => {
+        // Don't show typing indicator for current user
+        if (data.userId !== user?.id) {
+          setTypingUsers(prev => {
+            const exists = prev.find(u => u.userId === data.userId);
+            if (!exists) {
+              return [...prev, { userId: data.userId, username: data.username }];
+            }
+            return prev;
+          });
+        }
+      });
+
+      socketService.onUserStopTyping((data) => {
+        setTypingUsers(prev => prev.filter(u => u.userId !== data.userId));
+      });
     }
 
     return () => {
       socketService.removeAllListeners();
     };
-  }, [token]);
+  }, [token, user?.id]);
 
   const loadRooms = async () => {
     try {
@@ -74,6 +93,7 @@ const ChatPage = () => {
       }
       setSelectedRoom(null);
       setMessages([]);
+      setTypingUsers([]); // Clear typing users when leaving room
       return;
     }
 
@@ -85,6 +105,7 @@ const ChatPage = () => {
     // Join new room
     setSelectedRoom(room);
     socketService.joinRoom(room.id);
+    setTypingUsers([]); // Clear typing users when joining new room
 
     // Load messages for the room
     try {
@@ -180,12 +201,12 @@ const ChatPage = () => {
 
               {/* Messages */}
               <div className="flex-1 overflow-hidden bg-gray-50">
-                <MessageList messages={messages} currentUser={user} />
+                <MessageList messages={messages} currentUser={user} typingUsers={typingUsers} />
               </div>
 
               {/* Message Input */}
               <div className="bg-white border-t border-gray-100">
-                <MessageInput onSendMessage={handleSendMessage} />
+                <MessageInput onSendMessage={handleSendMessage} roomId={selectedRoom?.id} />
               </div>
             </>
           ) : (
