@@ -11,11 +11,14 @@ const RoomList = ({ rooms, selectedRoom, onRoomSelect, onRoomCreate, onRoomDelet
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [roomName, setRoomName] = useState('');
   const [loading, setLoading] = useState(false);
+  const [roomType, setRoomType] = useState('public'); // 'public' or 'private'
   const [deletingRoomId, setDeletingRoomId] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
   const [editingRoomId, setEditingRoomId] = useState(null);
   const [editRoomName, setEditRoomName] = useState('');
   const [showRoomMenu, setShowRoomMenu] = useState(null);
+  const [showJoinForm, setShowJoinForm] = useState(false);
+  const [roomCode, setRoomCode] = useState('');
 
   const handleCreateRoom = async (e) => {
     e.preventDefault();
@@ -23,12 +26,21 @@ const RoomList = ({ rooms, selectedRoom, onRoomSelect, onRoomCreate, onRoomDelet
 
     setLoading(true);
     try {
-      await roomAPI.createRoom(roomName.trim());
+      if (roomType === 'private') {
+        const result = await roomAPI.createPrivateRoom(roomName.trim());
+        // แสดงโค้ดห้องให้ผู้ใช้เห็น
+        alert(`ห้องส่วนตัวสร้างสำเร็จ!\nโค้ดห้อง: ${result.data.roomCode}\n\nกรุณาบันทึกโค้ดนี้เพื่อแชร์ให้เพื่อน`);
+      } else {
+        await roomAPI.createPublicRoom(roomName.trim());
+      }
+      
       setRoomName('');
+      setRoomType('public');
       setShowCreateForm(false);
       onRoomCreate(); // Reload room list
     } catch (error) {
       console.error('Failed to create room:', error);
+      alert('เกิดข้อผิดพลาดในการสร้างห้อง');
     } finally {
       setLoading(false);
     }
@@ -97,6 +109,25 @@ const RoomList = ({ rooms, selectedRoom, onRoomSelect, onRoomCreate, onRoomDelet
     setShowRoomMenu(showRoomMenu === roomId ? null : roomId);
   };
 
+  const handleJoinRoom = async (e) => {
+    e.preventDefault();
+    if (!roomCode.trim()) return;
+
+    setLoading(true);
+    try {
+      const result = await roomAPI.joinRoomByCode(roomCode.trim().toUpperCase());
+      alert(`เข้าร่วมห้อง "${result.data.name}" สำเร็จ!`);
+      setRoomCode('');
+      setShowJoinForm(false);
+      onRoomCreate(); // Reload room list
+    } catch (error) {
+      console.error('Failed to join room:', error);
+      alert('ไม่พบห้องที่ระบุ หรือโค้ดห้องไม่ถูกต้อง');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Close menus when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -116,16 +147,26 @@ const RoomList = ({ rooms, selectedRoom, onRoomSelect, onRoomCreate, onRoomDelet
 
   return (
     <div className="flex flex-col h-full">
-      {/* Create Room Button */}
-      <div className="p-3 lg:p-4">
+      {/* Action Buttons */}
+      <div className="p-3 lg:p-4 space-y-2">
         <Button
           onClick={() => setShowCreateForm(!showCreateForm)}
-          className="w-full bg-primary hover:bg-primary/90 text-primary-foreground border-0 rounded-xl h-10 lg:h-auto"
+          className="w-full bg-primary hover:bg-primary/90 text-primary-foreground border-0 rounded-xl h-10"
           variant="default"
         >
           <Plus className="h-4 w-4 mr-2" />
           <span className="hidden sm:inline">New Conversation</span>
           <span className="sm:hidden">New</span>
+        </Button>
+        
+        <Button
+          onClick={() => setShowJoinForm(!showJoinForm)}
+          className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 border-0 rounded-xl h-10"
+          variant="outline"
+        >
+          <MessageSquare className="h-4 w-4 mr-2" />
+          <span className="hidden sm:inline">Join Room</span>
+          <span className="sm:hidden">Join</span>
         </Button>
       </div>
 
@@ -141,6 +182,33 @@ const RoomList = ({ rooms, selectedRoom, onRoomSelect, onRoomCreate, onRoomDelet
               disabled={loading}
               className="border-gray-200 rounded-xl focus:border-primary h-10"
             />
+            
+            {/* Room Type Selection */}
+            <div className="flex space-x-2">
+              <button
+                type="button"
+                onClick={() => setRoomType('public')}
+                className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  roomType === 'public'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'
+                }`}
+              >
+                🌐 Public
+              </button>
+              <button
+                type="button"
+                onClick={() => setRoomType('private')}
+                className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  roomType === 'private'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'
+                }`}
+              >
+                🔒 Private
+              </button>
+            </div>
+            
             <div className="flex space-x-2">
               <Button
                 type="submit"
@@ -157,6 +225,45 @@ const RoomList = ({ rooms, selectedRoom, onRoomSelect, onRoomCreate, onRoomDelet
                 onClick={() => {
                   setShowCreateForm(false);
                   setRoomName('');
+                }}
+                className="flex-1 border-gray-200 rounded-xl hover:bg-gray-100 h-8"
+              >
+                Cancel
+              </Button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* Join Room Form */}
+      {showJoinForm && (
+        <div className="mx-3 lg:mx-4 mb-3 lg:mb-4 p-3 lg:p-4 bg-gray-50 rounded-xl">
+          <form onSubmit={handleJoinRoom} className="space-y-3">
+            <Input
+              type="text"
+              value={roomCode}
+              onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
+              placeholder="Enter room code (6 characters)"
+              disabled={loading}
+              maxLength={6}
+              className="border-gray-200 rounded-xl focus:border-primary h-10 text-center font-mono tracking-widest"
+            />
+            <div className="flex space-x-2">
+              <Button
+                type="submit"
+                size="sm"
+                disabled={loading || !roomCode.trim() || roomCode.length !== 6}
+                className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl h-8"
+              >
+                {loading ? 'Joining...' : 'Join Room'}
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  setShowJoinForm(false);
+                  setRoomCode('');
                 }}
                 className="flex-1 border-gray-200 rounded-xl hover:bg-gray-100 h-8"
               >
