@@ -46,33 +46,15 @@ api.interceptors.response.use(
 
 // API functions สำหรับ Rooms
 export const roomAPI = {
-  // สร้างห้องสาธารณะ
-  createPublicRoom: async (name) => {
-    const response = await api.post('/api/rooms/create-public-room', { name });
+  // สร้างห้อง
+  createRoom: async (name) => {
+    const response = await api.post('/api/rooms/create-room', { name });
     return response.data;
   },
 
-  // สร้างห้องส่วนตัว
-  createPrivateRoom: async (name) => {
-    const response = await api.post('/api/rooms/create-private-room', { name });
-    return response.data;
-  },
-
-  // ดึงรายการห้องสาธารณะ
-  getPublicRooms: async () => {
-    const response = await api.get('/api/rooms/get-public-rooms');
-    return response.data;
-  },
-
-  // ดึงรายการห้องส่วนตัวของตัวเอง
-  getMyPrivateRooms: async () => {
-    const response = await api.get('/api/rooms/get-my-private-rooms');
-    return response.data;
-  },
-
-  // เข้าร่วมห้องด้วยโค้ด
-  joinRoomByCode: async (roomCode) => {
-    const response = await api.post('/api/rooms/join-room-by-code', { roomCode });
+  // ดึงรายการห้องทั้งหมด
+  getRooms: async () => {
+    const response = await api.get('/api/rooms/get-rooms');
     return response.data;
   },
 
@@ -86,24 +68,6 @@ export const roomAPI = {
   deleteRoom: async (id) => {
     const response = await api.delete(`/api/rooms/delete-room/${id}`);
     return response.data;
-  },
-
-  // ฟังก์ชันเก่า (สำหรับ backward compatibility)
-  createRoom: async (name) => {
-    // Default เป็นห้องสาธารณะ
-    return roomAPI.createPublicRoom(name);
-  },
-
-  getRooms: async () => {
-    // ดึงทั้งห้องสาธารณะและห้องส่วนตัว
-    const [publicRooms, privateRooms] = await Promise.all([
-      roomAPI.getPublicRooms(),
-      roomAPI.getMyPrivateRooms()
-    ]);
-    
-    return {
-      data: [...publicRooms.data, ...privateRooms.data]
-    };
   },
 };
 
