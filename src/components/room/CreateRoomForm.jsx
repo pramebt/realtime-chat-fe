@@ -15,9 +15,8 @@ const CreateRoomForm = ({ onRoomCreate, onClose }) => {
 
     setLoading(true);
     try {
-      const response = await roomAPI.createRoomWithCode(roomName.trim());
-      const roomCode = response.data.roomCode;
-      alert(`ห้อง "${roomName.trim()}" สร้างสำเร็จ!\nรหัสห้อง: ${roomCode}`);
+      await roomAPI.createRoom(roomName.trim());
+      alert(`ห้อง "${roomName.trim()}" สร้างสำเร็จ!`);
       setRoomName('');
       onRoomCreate(); // Reload room list
       onClose(); // Close form

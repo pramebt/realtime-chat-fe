@@ -4,21 +4,16 @@ import { useAuth } from '../contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
-const HomePage = () => {
+const ProtectedRoute = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (!loading) {
-      if (isAuthenticated) {
-        router.push('/chat');
-      } else {
-        router.push('/login');
-      }
+    if (!loading && !isAuthenticated) {
+      router.push('/login');
     }
   }, [isAuthenticated, loading, router]);
 
-  // แสดง loading ขณะตรวจสอบ authentication
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -27,7 +22,11 @@ const HomePage = () => {
     );
   }
 
-  return null;
+  if (!isAuthenticated) {
+    return null;
+  }
+
+  return children;
 }
 
-export default HomePage;
+export default ProtectedRoute;

@@ -1,9 +1,9 @@
 import axios from 'axios';
 
-// ==================== CONFIGURATION ====================
-
+// ตั้งค่า base URL
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
+// สร้าง axios instance
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
@@ -11,11 +11,10 @@ const api = axios.create({
   },
 });
 
-// ==================== INTERCEPTORS ====================
-
-// Request interceptor - เพิ่ม token
+// เพิ่ม interceptor สำหรับจัดการ token
 api.interceptors.request.use(
   (config) => {
+    // Read token from localStorage first, then from cookies (same as AuthContext)
     const token = localStorage.getItem('token') || document.cookie
       .split('; ')
       .find(row => row.startsWith('token='))
@@ -26,14 +25,17 @@ api.interceptors.request.use(
     }
     return config;
   },
-  (error) => Promise.reject(error)
+  (error) => {
+    return Promise.reject(error);
+  }
 );
 
-// Response interceptor - จัดการ error
+// เพิ่ม interceptor สำหรับจัดการ response errors
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
+      // Token หมดอายุหรือไม่ถูกต้อง - ลบจาก localStorage และ cookies
       localStorage.removeItem('token');
       document.cookie = 'token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
       window.location.href = '/login';
@@ -42,38 +44,17 @@ api.interceptors.response.use(
   }
 );
 
-// ==================== ROOM API ====================
-
+// API functions สำหรับ Rooms
 export const roomAPI = {
+  // สร้างห้อง
+  createRoom: async (name) => {
+    const response = await api.post('/api/rooms/create-room', { name });
+    return response.data;
+  },
+
   // ดึงรายการห้องทั้งหมด
   getRooms: async () => {
     const response = await api.get('/api/rooms/get-rooms');
-    return response.data;
-  },
-
-  // สร้างห้องพร้อมรหัส
-  createRoomWithCode: async (name) => {
-    const response = await api.post('/api/rooms/create-room-with-code', { name });
-    return response.data;
-  },
-
-  // เข้าร่วมห้องด้วยรหัส
-  joinByCode: async (roomCode) => {
-    const response = await api.post('/api/rooms/join-room-by-code', { roomCode });
-    return response.data;
-  },
-
-  // สร้างห้อง private 1-on-1
-  createPrivateRoom: async (targetUserId) => {
-    const response = await api.post('/api/rooms/create-private-room', { 
-      targetUserId: parseInt(targetUserId) 
-    });
-    return response.data;
-  },
-
-  // ดึงรายชื่อห้อง private ของผู้ใช้
-  getPrivateRooms: async () => {
-    const response = await api.get('/api/rooms/get-private-rooms');
     return response.data;
   },
 
@@ -90,8 +71,7 @@ export const roomAPI = {
   },
 };
 
-// ==================== MESSAGE API ====================
-
+// API functions สำหรับ Messages
 export const messageAPI = {
   // ส่งข้อความ
   sendMessage: async (content, roomId, userId) => {
@@ -110,18 +90,11 @@ export const messageAPI = {
   },
 };
 
-// ==================== USER API ====================
-
+// API functions สำหรับ Users
 export const userAPI = {
   // ดึงข้อมูลโปรไฟล์
   getProfile: async () => {
     const response = await api.get('/api/auth/profile');
-    return response.data;
-  },
-
-  // ดึงรายชื่อผู้ใช้ทั้งหมด
-  getUsers: async () => {
-    const response = await api.get('/api/auth/users');
     return response.data;
   },
 };

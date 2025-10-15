@@ -3,8 +3,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Trash2, MoreVertical, Edit2, Check, X, Lock, Copy } from 'lucide-react';
+import { Trash2, MoreVertical, Edit2, Check, X } from 'lucide-react';
 import { roomAPI } from '@/services/api';
 
 const RoomItem = ({ 
@@ -20,7 +19,6 @@ const RoomItem = ({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
   const [deletingRoomId, setDeletingRoomId] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [copied, setCopied] = useState(false);
 
   const handleDeleteRoom = async (roomId) => {
     setDeletingRoomId(roomId);
@@ -86,26 +84,6 @@ const RoomItem = ({
   const cancelDelete = (e) => {
     e.stopPropagation();
     setShowDeleteConfirm(null);
-  };
-
-  const handleCopyCode = async (roomCode, e) => {
-    e.stopPropagation();
-    try {
-      await navigator.clipboard.writeText(roomCode);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch (error) {
-      console.error('Failed to copy:', error);
-      // Fallback for older browsers
-      const textArea = document.createElement('textarea');
-      textArea.value = roomCode;
-      document.body.appendChild(textArea);
-      textArea.select();
-      document.execCommand('copy');
-      document.body.removeChild(textArea);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }
   };
 
   const toggleRoomMenu = (roomId, e) => {
@@ -176,39 +154,16 @@ const RoomItem = ({
         >
           <div className="flex items-center justify-between">
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <h3 className={`font-medium truncate text-sm lg:text-base ${
-                  selectedRoom?.id === room.id ? 'text-primary' : 'text-gray-900'
-                }`}>
-                  {room.name}
-                </h3>
-                {room.isPrivate && (
-                  <Lock className="h-3 w-3 text-purple-600 flex-shrink-0" />
-                )}
-              </div>
-              <div className="flex items-center gap-2 mt-1">
-                <p className={`text-xs lg:text-sm truncate ${
-                  selectedRoom?.id === room.id ? 'text-primary/70' : 'text-gray-500'
-                }`}>
-                  {getRoomSubtitle(room)}
-                </p>
-                {room.roomCode && (
-                  <div className="flex items-center gap-1">
-                    <Badge 
-                      variant="secondary" 
-                      className="bg-purple-100 text-purple-800 border-purple-200 font-mono text-xs px-1 py-0"
-                    >
-                      {room.roomCode}
-                    </Badge>
-                    <button
-                      onClick={(e) => handleCopyCode(room.roomCode, e)}
-                      className="h-4 w-4 p-0 hover:bg-purple-200 rounded flex items-center justify-center"
-                    >
-                      <Copy className="h-2 w-2 text-purple-600" />
-                    </button>
-                  </div>
-                )}
-              </div>
+              <h3 className={`font-medium truncate text-sm lg:text-base ${
+                selectedRoom?.id === room.id ? 'text-primary' : 'text-gray-900'
+              }`}>
+                {room.name}
+              </h3>
+              <p className={`text-xs lg:text-sm truncate ${
+                selectedRoom?.id === room.id ? 'text-primary/70' : 'text-gray-500'
+              }`}>
+                {getRoomSubtitle(room)}
+              </p>
             </div>
             <div className="flex items-center space-x-2">
               <div className={`w-2 h-2 rounded-full flex-shrink-0 ${

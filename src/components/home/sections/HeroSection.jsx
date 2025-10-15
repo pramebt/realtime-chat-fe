@@ -30,7 +30,7 @@ const HeroSection = () => {
               size="lg" 
               className="bg-gray-900 hover:bg-gray-800 text-white px-8 py-3 text-lg"
             >
-              Get Started Free
+              Get Started Free!
               <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
           </Link>
