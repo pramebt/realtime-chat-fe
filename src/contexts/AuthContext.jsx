@@ -6,6 +6,9 @@ import axios from 'axios';
 
 const AuthContext = createContext();
 
+// Export AuthContext for use in custom hooks
+export { AuthContext };
+
 // ตั้งค่า axios base URL
 axios.defaults.baseURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 

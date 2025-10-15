@@ -1,134 +1,68 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useAuth } from '../../contexts/AuthContext';
-import ProtectedRoute from '../../components/ProtectedRoute';
+import { useAuth, useSocket, useRooms, useMessages } from '@/hooks';
+import ProtectedRoute from '../../components/auth/ProtectedRoute';
 import RoomList from '../../components/room/RoomList';
 import MessageList from '../../components/chat/MessageList';
 import MessageInput from '../../components/chat/MessageInput';
-import socketService from '../../services/socket';
-import { roomAPI, messageAPI } from '../../services/api';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LogOut, MessageSquare } from 'lucide-react';
 
 const ChatPage = () => {
   const { user, token, logout } = useAuth();
-  const [rooms, setRooms] = useState([]);
+  const { isConnected, joinRoom, leaveRoom } = useSocket();
+  const { rooms, loading: roomsLoading, refetch: loadRooms } = useRooms();
   const [selectedRoom, setSelectedRoom] = useState(null);
-  const [messages, setMessages] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [typingUsers, setTypingUsers] = useState([]);
+  
+  // Use messages hook for selected room
+  const { messages, loading: messagesLoading, sendMessage } = useMessages(selectedRoom?.id);
 
-  // Load rooms on mount
-  useEffect(() => {
-    loadRooms();
-  }, []);
-
-  // Connect Socket.IO when token is available
-  useEffect(() => {
-    if (token) {
-      socketService.connect(token);
-      
-      // Listen for new messages
-      socketService.onReceiveMessage((message) => {
-        setMessages(prev => [...prev, message]);
-      });
-
-      // Listen for user joined
-      socketService.onUserJoined((data) => {
-        console.log(`${data.username} joined the room`);
-      });
-
-      // Listen for user left
-      socketService.onUserLeft((data) => {
-        console.log(`${data.username} left the room`);
-      });
-
-      // Listen for errors
-      socketService.onError((error) => {
-        console.error('Socket error:', error);
-      });
-
-      // Listen for typing events
-      socketService.onUserTyping((data) => {
-        // Don't show typing indicator for current user
-        if (data.userId !== user?.id) {
-          setTypingUsers(prev => {
-            const exists = prev.find(u => u.userId === data.userId);
-            if (!exists) {
-              return [...prev, { userId: data.userId, username: data.username }];
-            }
-            return prev;
-          });
-        }
-      });
-
-      socketService.onUserStopTyping((data) => {
-        setTypingUsers(prev => prev.filter(u => u.userId !== data.userId));
-      });
-    }
-
-    return () => {
-      socketService.removeAllListeners();
-    };
-  }, [token, user?.id]);
-
-  const loadRooms = async () => {
-    try {
-      const response = await roomAPI.getRooms();
-      setRooms(response.data);
-    } catch (error) {
-      console.error('Failed to load rooms:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  // Handle room selection
   const handleRoomSelect = async (room) => {
-    // If room is null, clear selection
-    if (!room) {
-      if (selectedRoom) {
-        socketService.leaveRoom(selectedRoom.id);
-      }
-      setSelectedRoom(null);
-      setMessages([]);
-      setTypingUsers([]); // Clear typing users when leaving room
-      return;
-    }
-
     // Leave previous room
     if (selectedRoom) {
-      socketService.leaveRoom(selectedRoom.id);
+      leaveRoom(selectedRoom.id);
     }
 
     // Join new room
     setSelectedRoom(room);
-    socketService.joinRoom(room.id);
-    setTypingUsers([]); // Clear typing users when joining new room
-
-    // Load messages for the room
-    try {
-      const response = await messageAPI.getMessages(room.id);
-      setMessages(response.data);
-    } catch (error) {
-      console.error('Failed to load messages:', error);
-      setMessages([]);
+    if (room) {
+      joinRoom(room.id);
     }
+    setTypingUsers([]); // Clear typing users when changing room
   };
 
-  const handleSendMessage = (message) => {
-    if (selectedRoom && message.trim()) {
-      socketService.sendMessage(selectedRoom.id, message.trim());
+  // Handle room creation/join
+  const handleRoomCreate = () => {
+    loadRooms(); // Reload rooms list
+  };
+
+  const handleRoomDeleted = (deletedRoom) => {
+    if (selectedRoom && selectedRoom.id === deletedRoom.id) {
+      setSelectedRoom(null);
+    }
+    loadRooms(); // Reload rooms list
+  };
+
+  // Handle sending message
+  const handleSendMessage = async (content) => {
+    if (!selectedRoom || !user) return;
+    
+    try {
+      await sendMessage(content, user.id);
+    } catch (error) {
+      console.error('Failed to send message:', error);
     }
   };
 
   const handleLogout = () => {
-    socketService.disconnect();
     logout();
   };
 
-  if (loading) {
+  if (roomsLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>

@@ -3,11 +3,17 @@
 import { useState, useEffect } from 'react';
 import { MessageSquare } from 'lucide-react';
 import CreateRoomForm from './CreateRoomForm';
+import PrivateRoomForm from './PrivateRoomForm';
+import JoinRoomForm from './JoinRoomForm';
+import UserSelectionForm from './UserSelectionForm';
 import RoomActions from './RoomActions';
 import RoomItem from './RoomItem';
 
 const RoomList = ({ rooms, selectedRoom, onRoomSelect, onRoomCreate, onRoomDeleted }) => {
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [showPrivateForm, setShowPrivateForm] = useState(false);
+  const [showJoinForm, setShowJoinForm] = useState(false);
+  const [showUserSelection, setShowUserSelection] = useState(false);
 
   // Close menus when clicking outside
   useEffect(() => {
@@ -29,6 +35,31 @@ const RoomList = ({ rooms, selectedRoom, onRoomSelect, onRoomCreate, onRoomDelet
     setShowCreateForm(false);
   };
 
+  const handleClosePrivateForm = () => {
+    setShowPrivateForm(false);
+  };
+
+  const handleCloseJoinForm = () => {
+    setShowJoinForm(false);
+  };
+
+  const handleCloseUserSelection = () => {
+    setShowUserSelection(false);
+  };
+
+  const handleRoomJoined = (room) => {
+    // Auto-select the joined room
+    onRoomSelect(room);
+    setShowJoinForm(false);
+  };
+
+  const handleRoomCreated = (room) => {
+    // Auto-select the created room
+    onRoomSelect(room);
+    onRoomCreate(); // Reload room list
+    setShowUserSelection(false);
+  };
+
   // แสดงห้องทั้งหมด
   const allRooms = rooms;
 
@@ -36,7 +67,30 @@ const RoomList = ({ rooms, selectedRoom, onRoomSelect, onRoomCreate, onRoomDelet
     <div className="flex flex-col h-full">
       {/* Action Buttons */}
       <RoomActions 
-        onShowCreateForm={() => setShowCreateForm(!showCreateForm)}
+        onShowCreateForm={() => {
+          setShowCreateForm(!showCreateForm);
+          setShowPrivateForm(false);
+          setShowJoinForm(false);
+          setShowUserSelection(false);
+        }}
+        onShowPrivateForm={() => {
+          setShowPrivateForm(!showPrivateForm);
+          setShowCreateForm(false);
+          setShowJoinForm(false);
+          setShowUserSelection(false);
+        }}
+        onShowUserSelection={() => {
+          setShowUserSelection(!showUserSelection);
+          setShowCreateForm(false);
+          setShowPrivateForm(false);
+          setShowJoinForm(false);
+        }}
+        onShowJoinForm={() => {
+          setShowJoinForm(!showJoinForm);
+          setShowCreateForm(false);
+          setShowPrivateForm(false);
+          setShowUserSelection(false);
+        }}
       />
 
       {/* Create Room Form */}
@@ -47,6 +101,29 @@ const RoomList = ({ rooms, selectedRoom, onRoomSelect, onRoomCreate, onRoomDelet
         />
       )}
 
+      {/* Private Room Form */}
+      {showPrivateForm && (
+        <PrivateRoomForm 
+          onRoomCreate={onRoomCreate}
+          onClose={handleClosePrivateForm}
+        />
+      )}
+
+      {/* User Selection Form */}
+      {showUserSelection && (
+        <UserSelectionForm 
+          onRoomCreated={handleRoomCreated}
+          onClose={handleCloseUserSelection}
+        />
+      )}
+
+      {/* Join Room Form */}
+      {showJoinForm && (
+        <JoinRoomForm 
+          onRoomJoined={handleRoomJoined}
+          onClose={handleCloseJoinForm}
+        />
+      )}
 
       {/* Room List */}
       <div className="flex-1 overflow-y-auto px-3 lg:px-4 pb-3 lg:pb-4">
