@@ -1,22 +1,76 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 
 const MessageList = ({ messages, currentUser, typingUsers = [] }) => {
   const messagesEndRef = useRef(null);
+  const scrollContainerRef = useRef(null);
+  const [showTimestamp, setShowTimestamp] = useState({});
+  const [showScrollToBottom, setShowScrollToBottom] = useState(false);
+  const [isAutoScroll, setIsAutoScroll] = useState(true);
+
+  // Scroll to bottom function
+  const scrollToBottom = useCallback((behavior = 'smooth') => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior });
+    }
+  }, []);
+
+  // Check if user is near bottom of scroll
+  const checkScrollPosition = useCallback(() => {
+    if (!scrollContainerRef.current) return;
+    
+    const { scrollTop, scrollHeight, clientHeight } = scrollContainerRef.current;
+    const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
+    
+    setShowScrollToBottom(!isNearBottom);
+    setIsAutoScroll(isNearBottom);
+  }, []);
 
   // Scroll to bottom when new messages arrive or typing users change
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, typingUsers]);
+    if (isAutoScroll) {
+      scrollToBottom('smooth');
+    }
+  }, [messages, typingUsers, isAutoScroll, scrollToBottom]);
+
+  // Handle scroll events
+  useEffect(() => {
+    const scrollContainer = scrollContainerRef.current;
+    if (!scrollContainer) return;
+
+    scrollContainer.addEventListener('scroll', checkScrollPosition);
+    return () => scrollContainer.removeEventListener('scroll', checkScrollPosition);
+  }, [checkScrollPosition]);
+
+  // Toggle timestamp visibility
+  const toggleTimestamp = (messageId) => {
+    setShowTimestamp(prev => ({
+      ...prev,
+      [messageId]: !prev[messageId]
+    }));
+  };
 
   const formatTime = (timestamp) => {
     const date = new Date(timestamp);
     return date.toLocaleTimeString('en-US', {
       hour: '2-digit',
-      minute: '2-digit'
+      minute: '2-digit',
+      second: '2-digit'
+    });
+  };
+
+  const formatDateTime = (timestamp) => {
+    const date = new Date(timestamp);
+    return date.toLocaleString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
     });
   };
 
@@ -46,7 +100,12 @@ const MessageList = ({ messages, currentUser, typingUsers = [] }) => {
   }, {});
 
   return (
-    <div className="flex-1 overflow-y-auto p-3 lg:p-4 space-y-3 lg:space-y-4">
+    <div className="flex-1 relative h-full min-h-0">
+      {/* Scroll Container */}
+      <div 
+        ref={scrollContainerRef}
+        className="h-full overflow-y-auto overflow-x-hidden p-3 lg:p-4 space-y-3 lg:space-y-4 scroll-smooth scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400"
+      >
       {Object.keys(groupedMessages).length === 0 ? (
         <div className="flex items-center justify-center h-full">
           <div className="text-center text-gray-400 px-4">
@@ -65,24 +124,21 @@ const MessageList = ({ messages, currentUser, typingUsers = [] }) => {
             </div>
 
             {/* Messages for this date */}
-            <div className="space-y-1">
+            <div className="space-y-3">
               {dayMessages.map((message, index) => {
                 const isCurrentUser = currentUser?.id === message.user?.id;
-                const prevMessage = index > 0 ? dayMessages[index - 1] : null;
-                const showAvatar = !prevMessage || prevMessage.user?.id !== message.user?.id;
+                const showAvatar = true; // แสดง avatar ทุกข้อความ
 
                 return (
                   <div
                     key={message.id}
-                    className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'} ${
-                      showAvatar ? 'mt-3 lg:mt-4' : 'mt-1'
-                    }`}
+                    className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'} mt-3 lg:mt-4`}
                   >
                     <div className={`flex max-w-[85%] lg:max-w-md ${isCurrentUser ? 'flex-row-reverse' : 'flex-row'}`}>
                       {/* Avatar */}
                       {showAvatar && (
                         <div className={`flex-shrink-0 ${isCurrentUser ? 'ml-2 lg:ml-2' : 'mr-2 lg:mr-2'}`}>
-                          <Avatar className="h-6 w-6 lg:h-8 lg:w-8">
+                          <Avatar className="h-8 w-8 lg:h-10 lg:w-10">
                             <AvatarFallback className="text-xs bg-gray-200 text-gray-600">
                               {message.user?.username?.charAt(0).toUpperCase() || '?'}
                             </AvatarFallback>
@@ -93,25 +149,30 @@ const MessageList = ({ messages, currentUser, typingUsers = [] }) => {
                       {/* Message Content */}
                       <div className={`flex flex-col ${isCurrentUser ? 'items-end' : 'items-start'}`}>
                         {/* Username */}
-                        {showAvatar && (
-                          <div className={`text-xs text-gray-500 mb-1 px-1 ${isCurrentUser ? 'text-right' : 'text-left'}`}>
-                            {message.user?.username}
-                          </div>
-                        )}
+                        <div className={`text-xs text-gray-500 mb-1 px-1 ${isCurrentUser ? 'text-right' : 'text-left'}`}>
+                          {message.user?.username}
+                        </div>
 
                         {/* Message Bubble */}
-                        <div className={`max-w-full rounded-2xl px-3 lg:px-4 py-2 ${
-                          isCurrentUser
-                            ? 'bg-primary text-primary-foreground'
-                            : 'bg-white text-gray-900 shadow-sm border border-gray-100'
-                        }`}>
-                          <p className="text-sm break-words leading-relaxed">{message.content}</p>
+                        <div 
+                          className={`max-w-full rounded-2xl px-3 lg:px-4 py-2 cursor-pointer transition-all duration-200 hover:shadow-md ${
+                            isCurrentUser
+                              ? 'bg-primary text-primary-foreground hover:bg-primary/90'
+                              : 'bg-white text-gray-900 shadow-sm border border-gray-100 hover:shadow-lg'
+                          }`}
+                          onClick={() => toggleTimestamp(message.id)}
+                        >
+                          <p className="text-sm lg:text-base break-words leading-relaxed">{message.content}</p>
                         </div>
 
-                        {/* Timestamp */}
-                        <div className={`text-xs text-gray-400 mt-1 px-1 ${isCurrentUser ? 'text-right' : 'text-left'}`}>
-                          {formatTime(message.timestamp || message.createdAt)}
-                        </div>
+                        {/* Timestamp - แสดงเมื่อคลิก */}
+                        {showTimestamp[message.id] && (
+                          <div className={`text-xs text-gray-400 mt-1 px-1 ${isCurrentUser ? 'text-right' : 'text-left'}`}>
+                            <div className="bg-gray-100 rounded px-2 py-1 inline-block">
+                              {formatDateTime(message.timestamp || message.createdAt)}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -142,6 +203,9 @@ const MessageList = ({ messages, currentUser, typingUsers = [] }) => {
       )}
       
       <div ref={messagesEndRef} />
+      </div>
+
+      
     </div>
   );
 };

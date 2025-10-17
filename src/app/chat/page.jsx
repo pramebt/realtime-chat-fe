@@ -200,7 +200,7 @@ const ChatPage = () => {
               </div>
 
               {/* Messages */}
-              <div className="flex-1 overflow-hidden bg-gray-50">
+              <div className="flex-1 bg-gray-50">
                 <MessageList messages={messages} currentUser={user} typingUsers={typingUsers} />
               </div>
 
