@@ -1,81 +1,76 @@
 'use client';
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { MessageSquare, Users, Zap, Shield, Smartphone, Globe, Key } from 'lucide-react';
+import { Zap, Lock, Users, MessageSquare, Bell, Sparkles } from 'lucide-react';
+
+const features = [
+  {
+    icon: Zap,
+    title: 'Lightning Fast',
+    description: 'Real-time messaging with instant delivery. No delays, no waiting.'
+  },
+  {
+    icon: Lock,
+    title: 'Secure & Private',
+    description: 'End-to-end encryption keeps your conversations private and secure.'
+  },
+  {
+    icon: Users,
+    title: 'Room-Based Chat',
+    description: 'Create public or private rooms. Invite friends with a simple code.'
+  },
+  {
+    icon: MessageSquare,
+    title: 'Simple Interface',
+    description: 'Clean, intuitive design that gets out of your way.'
+  },
+  {
+    icon: Bell,
+    title: 'Smart Notifications',
+    description: 'Stay updated without being overwhelmed. You control what you see.'
+  },
+  {
+    icon: Sparkles,
+    title: 'Modern Experience',
+    description: 'Built with the latest technology for a smooth experience.'
+  }
+];
 
 const FeaturesSection = () => {
-  const features = [
-    {
-      icon: <MessageSquare className="h-6 w-6 text-gray-600" />,
-      title: "Real-time Chat",
-      description: "Send messages instantly with typing indicators"
-    },
-    {
-      icon: <Users className="h-6 w-6 text-gray-600" />,
-      title: "Multiple Rooms",
-      description: "Create and manage multiple chat rooms"
-    },
-    {
-      icon: <Key className="h-6 w-6 text-gray-600" />,
-      title: "Private Rooms",
-      description: "Create private rooms with unique codes for secure conversations"
-    },
-    {
-      icon: <Zap className="h-6 w-6 text-gray-600" />,
-      title: "Fast & Reliable",
-      description: "Lightning-fast system powered by Socket.IO"
-    },
-    {
-      icon: <Shield className="h-6 w-6 text-gray-700" />,
-      title: "Secure",
-      description: "Protected with JWT Authentication"
-    },
-    {
-      icon: <Smartphone className="h-6 w-6 text-gray-700" />,
-      title: "Responsive",
-      description: "Works perfectly on all devices"
-    },
-    {
-      icon: <Globe className="h-6 w-6 text-gray-700" />,
-      title: "Modern UI",
-      description: "Beautiful Apple iOS-inspired design"
-    }
-  ];
-
   return (
-    <section className="container mx-auto px-4 py-16">
-      <div className="text-center mb-12">
-        <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
-          Why Choose ChatApp?
-        </h2>
-        <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-          Modern chat system with comprehensive features for seamless communication
-        </p>
-      </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {features.map((feature, index) => (
-          <Card 
-            key={index} 
-            className="hover:shadow-lg transition-all duration-300 hover:-translate-y-1 border-0 shadow-sm bg-white/80 backdrop-blur-sm"
-          >
-            <CardHeader className="text-center pb-4">
-              <div className="flex justify-center mb-4">
-                <div className="p-3 rounded-full bg-gray-100">
-                  {feature.icon}
+    <section className="py-20 px-4 bg-gray-50">
+      <div className="container mx-auto max-w-6xl">
+        {/* Section Header */}
+        <div className="text-center mb-16">
+          <h2 className="text-3xl lg:text-5xl font-bold text-gray-900 mb-4">
+            Everything you need
+          </h2>
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+            A complete chat solution with all the features you need, without the complexity.
+          </p>
+        </div>
+
+        {/* Features Grid */}
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {features.map((feature, index) => {
+            const Icon = feature.icon;
+            return (
+              <div
+                key={index}
+                className="bg-white rounded-xl p-6 hover:shadow-md transition-shadow"
+              >
+                <div className="h-10 w-10 bg-gray-100 rounded-lg flex items-center justify-center mb-4">
+                  <Icon className="h-5 w-5 text-gray-900" />
                 </div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  {feature.title}
+                </h3>
+                <p className="text-gray-600 text-sm leading-relaxed">
+                  {feature.description}
+                </p>
               </div>
-              <CardTitle className="text-xl text-gray-900">
-                {feature.title}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <CardDescription className="text-center text-gray-600">
-                {feature.description}
-              </CardDescription>
-            </CardContent>
-          </Card>
-        ))}
+            );
+          })}
+        </div>
       </div>
     </section>
   );

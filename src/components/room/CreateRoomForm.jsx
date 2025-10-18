@@ -59,7 +59,7 @@ const CreateRoomForm = ({ onRoomCreate, onClose }) => {
         <div className="text-center space-y-6">
           {/* Success Icon */}
           <div className="flex flex-col items-center space-y-3">
-            <div className="h-12 w-12 bg-blue-500 rounded-full flex items-center justify-center shadow-sm">
+            <div className="h-12 w-12 bg-gray-900 rounded-full flex items-center justify-center shadow-sm">
               <Check className="h-6 w-6 text-white stroke-[2.5]" />
             </div>
             <h3 className="text-xl font-medium text-gray-900">Room Created</h3>
@@ -81,7 +81,7 @@ const CreateRoomForm = ({ onRoomCreate, onClose }) => {
                 className="h-10 w-10 p-0 hover:bg-gray-100 rounded-xl transition-colors"
               >
                 {copied ? (
-                  <Check className="h-4 w-4 text-blue-500" />
+                  <Check className="h-4 w-4 text-gray-900" />
                 ) : (
                   <Copy className="h-4 w-4 text-gray-500" />
                 )}
@@ -96,7 +96,7 @@ const CreateRoomForm = ({ onRoomCreate, onClose }) => {
           <div className="pt-2">
             <Button
               onClick={handleCloseAfterCreate}
-              className="w-full bg-blue-500 hover:bg-blue-600 text-white rounded-xl h-11 font-medium shadow-sm transition-colors"
+              className="w-full bg-gray-900 hover:bg-gray-800 text-white rounded-xl h-11 font-medium shadow-sm transition-colors"
             >
               Done
             </Button>
@@ -119,7 +119,7 @@ const CreateRoomForm = ({ onRoomCreate, onClose }) => {
             onChange={(e) => setRoomName(e.target.value)}
             placeholder="Enter conversation name"
             disabled={loading}
-            className="border-gray-200 rounded-xl focus:border-blue-500 focus:ring-1 focus:ring-blue-500 h-11 text-base transition-colors"
+            className="border-gray-200 rounded-xl focus:border-gray-400 focus:ring-0 h-11 text-base transition-colors"
           />
         </div>
         
@@ -127,7 +127,7 @@ const CreateRoomForm = ({ onRoomCreate, onClose }) => {
           <Button
             type="submit"
             disabled={loading || !roomName.trim()}
-            className="flex-1 bg-blue-500 hover:bg-blue-600 text-white rounded-xl h-11 font-medium shadow-sm transition-colors disabled:bg-gray-200 disabled:text-gray-400"
+            className="flex-1 bg-gray-900 hover:bg-gray-800 text-white rounded-xl h-11 font-medium shadow-sm transition-colors disabled:bg-gray-200 disabled:text-gray-400"
           >
             {loading ? 'Creating...' : 'Create Room'}
           </Button>

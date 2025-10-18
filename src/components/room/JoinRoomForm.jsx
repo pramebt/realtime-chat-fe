@@ -67,7 +67,7 @@ const JoinRoomForm = ({ onRoomJoin, onClose }) => {
               placeholder="A1B2C3"
               disabled={loading}
               maxLength={6}
-              className="pl-12 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-1 focus:ring-blue-500 h-11 text-center tracking-[0.3em] font-mono text-lg font-semibold transition-colors"
+              className="pl-12 border-gray-200 rounded-xl focus:border-gray-400 focus:ring-0 h-11 text-center tracking-[0.3em] font-mono text-lg font-semibold transition-colors"
             />
           </div>
           <p className="text-xs text-gray-500 text-center">
@@ -79,7 +79,7 @@ const JoinRoomForm = ({ onRoomJoin, onClose }) => {
           <Button
             type="submit"
             disabled={loading || roomCode.trim().length !== 6}
-            className="flex-1 bg-blue-500 hover:bg-blue-600 text-white rounded-xl h-11 font-medium shadow-sm transition-colors disabled:bg-gray-200 disabled:text-gray-400"
+            className="flex-1 bg-gray-900 hover:bg-gray-800 text-white rounded-xl h-11 font-medium shadow-sm transition-colors disabled:bg-gray-200 disabled:text-gray-400"
           >
             {loading ? 'Joining...' : 'Join Room'}
           </Button>
