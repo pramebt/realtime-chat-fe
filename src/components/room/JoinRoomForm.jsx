@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { roomAPI } from '@/services/api';
 import { Key } from 'lucide-react';
+import { toast } from 'sonner';
 
 const JoinRoomForm = ({ onRoomJoin, onClose }) => {
   const [roomCode, setRoomCode] = useState('');
@@ -19,7 +20,7 @@ const JoinRoomForm = ({ onRoomJoin, onClose }) => {
       const response = await roomAPI.joinByCode(roomCode.trim().toUpperCase());
       const room = response.data;
       
-      alert(`เข้าร่วมห้อง "${room.name}" สำเร็จ!`);
+      toast.success(`เข้าร่วมห้อง "${room.name}" สำเร็จ!`);
       setRoomCode('');
       onRoomJoin(room); // Pass the joined room to parent
       onClose(); // Close form
@@ -28,11 +29,11 @@ const JoinRoomForm = ({ onRoomJoin, onClose }) => {
       
       // Handle specific error cases
       if (error.response?.status === 404) {
-        alert('ไม่พบห้องที่ระบุ กรุณาตรวจสอบรหัสห้อง');
+        toast.error('ไม่พบห้องที่ระบุ กรุณาตรวจสอบรหัสห้อง');
       } else if (error.response?.status === 400) {
-        alert('รหัสห้องไม่ถูกต้อง');
+        toast.error('รหัสห้องไม่ถูกต้อง');
       } else {
-        alert('เกิดข้อผิดพลาดในการเข้าร่วมห้อง กรุณาลองใหม่อีกครั้ง');
+        toast.error('เกิดข้อผิดพลาดในการเข้าร่วมห้อง กรุณาลองใหม่อีกครั้ง');
       }
     } finally {
       setLoading(false);
@@ -51,36 +52,42 @@ const JoinRoomForm = ({ onRoomJoin, onClose }) => {
   };
 
   return (
-    <div className="mx-3 lg:mx-4 mb-3 lg:mb-4 p-3 lg:p-4 bg-gray-50 rounded-xl">
-      <form onSubmit={handleSubmit} className="space-y-3">
-        <div className="relative">
-          <Key className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <Input
-            type="text"
-            value={roomCode}
-            onChange={handleCodeChange}
-            placeholder="Enter Room Code (e.g., A1B2C3)"
-            disabled={loading}
-            maxLength={6}
-            className="pl-10 border-gray-200 rounded-xl focus:border-primary h-10 text-center tracking-widest font-mono text-base"
-          />
+    <div className="mx-3 lg:mx-4 mb-3 lg:mb-4 p-6 lg:p-8 bg-white rounded-2xl shadow-sm">
+      <form onSubmit={handleSubmit} className="space-y-5">
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-gray-900 block">
+            Room Code
+          </label>
+          <div className="relative">
+            <Key className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input
+              type="text"
+              value={roomCode}
+              onChange={handleCodeChange}
+              placeholder="A1B2C3"
+              disabled={loading}
+              maxLength={6}
+              className="pl-12 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-1 focus:ring-blue-500 h-11 text-center tracking-[0.3em] font-mono text-lg font-semibold transition-colors"
+            />
+          </div>
+          <p className="text-xs text-gray-500 text-center">
+            Enter the 6-character room code
+          </p>
         </div>
         
-        <div className="flex space-x-2">
+        <div className="flex space-x-3 pt-1">
           <Button
             type="submit"
-            size="sm"
             disabled={loading || roomCode.trim().length !== 6}
-            className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl h-8"
+            className="flex-1 bg-blue-500 hover:bg-blue-600 text-white rounded-xl h-11 font-medium shadow-sm transition-colors disabled:bg-gray-200 disabled:text-gray-400"
           >
             {loading ? 'Joining...' : 'Join Room'}
           </Button>
           <Button
             type="button"
-            size="sm"
-            variant="outline"
+            variant="ghost"
             onClick={handleCancel}
-            className="flex-1 border-gray-200 rounded-xl hover:bg-gray-100 h-8"
+            className="flex-1 rounded-xl hover:bg-gray-100 h-11 font-medium text-gray-700 transition-colors"
           >
             Cancel
           </Button>

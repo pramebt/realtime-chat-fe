@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Trash2, MoreVertical, Edit2, Check, X, Users, Crown } from 'lucide-react';
 import { roomAPI } from '@/services/api';
+import { toast } from 'sonner';
 
 const RoomItem = ({ 
   room, 
@@ -34,11 +35,11 @@ const RoomItem = ({
       
       // Handle specific error cases
       if (error.response?.status === 403) {
-        alert('คุณไม่มีสิทธิ์ลบห้องนี้ (เฉพาะเจ้าของห้องส่วนตัวเท่านั้นที่สามารถลบได้)');
+        toast.error('คุณไม่มีสิทธิ์ลบห้องนี้ (เฉพาะเจ้าของห้องส่วนตัวเท่านั้นที่สามารถลบได้)');
       } else if (error.response?.status === 404) {
-        alert('ไม่พบห้องที่ระบุ');
+        toast.error('ไม่พบห้องที่ระบุ');
       } else {
-        alert('เกิดข้อผิดพลาดในการลบห้อง กรุณาลองใหม่อีกครั้ง');
+        toast.error('เกิดข้อผิดพลาดในการลบห้อง กรุณาลองใหม่อีกครั้ง');
       }
     } finally {
       setDeletingRoomId(null);
@@ -113,36 +114,34 @@ const RoomItem = ({
   };
 
   return (
-    <div className="relative">
+    <div className="relative group">
       {/* Edit Mode */}
       {editingRoomId === room.id ? (
-        <div className="rounded-xl p-3 lg:p-4 bg-gray-50 border border-gray-200">
-          <div className="space-y-2">
+        <div className="rounded-xl p-3.5 lg:p-4 bg-gray-50 border border-gray-200">
+          <div className="space-y-2.5">
             <Input
               type="text"
               value={editRoomName}
               onChange={(e) => setEditRoomName(e.target.value)}
               placeholder="Room name"
-              className="border-gray-200 rounded-xl focus:border-primary h-8 text-sm"
+              className="border-gray-300 rounded-lg focus:border-gray-400 focus:ring-0 h-9 text-sm transition-colors"
               autoFocus
             />
             <div className="flex space-x-2">
               <Button
                 onClick={() => handleEditRoom(room.id)}
-                size="sm"
                 disabled={loading || !editRoomName.trim()}
-                className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl h-7"
+                className="flex-1 bg-gray-900 hover:bg-gray-800 text-white rounded-lg h-8 text-sm font-medium transition-colors disabled:bg-gray-300 disabled:text-gray-500"
               >
-                <Check className="h-3 w-3 mr-1" />
+                <Check className="h-3.5 w-3.5 mr-1" />
                 Save
               </Button>
               <Button
                 onClick={cancelEdit}
-                size="sm"
-                variant="outline"
-                className="flex-1 border-gray-200 rounded-xl hover:bg-gray-100 h-7"
+                variant="ghost"
+                className="flex-1 rounded-lg hover:bg-gray-200 h-8 text-sm font-medium text-gray-700 transition-colors"
               >
-                <X className="h-3 w-3 mr-1" />
+                <X className="h-3.5 w-3.5 mr-1" />
                 Cancel
               </Button>
             </div>
@@ -151,10 +150,10 @@ const RoomItem = ({
       ) : (
         /* Normal Room Item */
         <div
-          className={`cursor-pointer transition-all duration-200 rounded-xl p-3 lg:p-4 ${
+          className={`cursor-pointer transition-all duration-150 rounded-xl p-3.5 lg:p-4 ${
             selectedRoom?.id === room.id
-              ? 'bg-primary/10 border border-primary/20'
-              : 'hover:bg-gray-50'
+              ? 'bg-gray-100'
+              : 'hover:bg-gray-50/50'
           }`}
           onClick={() => onRoomSelect(room)}
         >
@@ -162,35 +161,33 @@ const RoomItem = ({
             <div className="flex-1 min-w-0">
               <div className="flex items-center space-x-2">
                 <h3 className={`font-medium truncate text-sm lg:text-base ${
-                  selectedRoom?.id === room.id ? 'text-primary' : 'text-gray-900'
+                  selectedRoom?.id === room.id ? 'text-gray-900' : 'text-gray-800'
                 }`}>
                   {room.name}
                 </h3>
                 {room.isPrivate && (
-                  <Crown className="h-3 w-3 text-yellow-500 flex-shrink-0" />
+                  <Crown className="h-3.5 w-3.5 text-amber-500 flex-shrink-0" />
                 )}
               </div>
-              <p className={`text-xs lg:text-sm truncate ${
-                selectedRoom?.id === room.id ? 'text-primary/70' : 'text-gray-500'
-              }`}>
+              <p className="text-xs lg:text-sm truncate mt-1 text-gray-500">
                 {getRoomSubtitle(room)}
               </p>
-              <div className="flex items-center space-x-1 mt-1">
+              <div className="flex items-center space-x-1.5 mt-1">
                 <Users className="h-3 w-3 text-gray-400" />
-                <span className="text-xs text-gray-400">
-                  Code: {room.code}
+                <span className="text-xs text-gray-400 font-mono">
+                  {room.code}
                 </span>
               </div>
             </div>
             <div className="flex items-center space-x-2">
-              <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
-                selectedRoom?.id === room.id ? 'bg-primary' : 'bg-gray-300'
+              <div className={`w-2 h-2 rounded-full flex-shrink-0 transition-colors ${
+                selectedRoom?.id === room.id ? 'bg-gray-900' : 'bg-gray-300'
               }`} />
               <button
                 onClick={(e) => toggleRoomMenu(room.id, e)}
-                className="room-menu-button h-6 w-6 p-0 hover:bg-gray-200 rounded flex items-center justify-center"
+                className="room-menu-button h-6 w-6 p-0 hover:bg-gray-200 rounded-md flex items-center justify-center transition-all lg:opacity-0 lg:group-hover:opacity-100"
               >
-                <MoreVertical className="h-3 w-3" />
+                <MoreVertical className="h-3.5 w-3.5 text-gray-400" />
               </button>
             </div>
           </div>
@@ -199,25 +196,25 @@ const RoomItem = ({
 
       {/* Room Menu Dropdown */}
       {showRoomMenu === room.id && (
-        <div className="room-menu absolute top-12 right-2 bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-[120px]">
+        <div className="room-menu absolute top-12 right-2 bg-white border border-gray-200 rounded-lg shadow-md z-50 min-w-[130px] overflow-hidden">
           <div className="py-1">
             <button
               onClick={(e) => startEdit(room, e)}
-              className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center"
+              className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center transition-colors"
             >
-              <Edit2 className="h-3 w-3 mr-2" />
+              <Edit2 className="h-3.5 w-3.5 mr-2" />
               Edit
             </button>
             <button
               onClick={(e) => confirmDelete(room.id, e)}
               disabled={!canDeleteRoom(room)}
-              className={`w-full px-3 py-2 text-left text-sm flex items-center ${
+              className={`w-full px-3 py-2 text-left text-sm flex items-center transition-colors ${
                 canDeleteRoom(room) 
                   ? 'text-red-600 hover:bg-red-50' 
                   : 'text-gray-400 cursor-not-allowed'
               }`}
             >
-              <Trash2 className="h-3 w-3 mr-2" />
+              <Trash2 className="h-3.5 w-3.5 mr-2" />
               Delete
             </button>
           </div>
@@ -226,24 +223,25 @@ const RoomItem = ({
 
       {/* Delete Confirmation */}
       {showDeleteConfirm === room.id && (
-        <div className="room-menu absolute top-12 right-2 bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-[200px] p-3">
-          <p className="text-sm text-gray-700 mb-3">
-            Are you sure you want to delete "{room.name}"?
+        <div className="room-menu absolute top-12 right-2 bg-white border border-gray-200 rounded-lg shadow-md z-50 min-w-[220px] p-3">
+          <p className="text-sm text-gray-900 mb-3">
+            Delete "{room.name}"?
+          </p>
+          <p className="text-xs text-gray-500 mb-3">
+            This action cannot be undone.
           </p>
           <div className="flex space-x-2">
             <Button
               onClick={() => handleDeleteRoom(room.id)}
-              size="sm"
               disabled={deletingRoomId === room.id}
-              className="flex-1 bg-red-500 hover:bg-red-600 text-white rounded-lg h-7"
+              className="flex-1 bg-red-600 hover:bg-red-700 text-white rounded-lg h-8 text-sm font-medium transition-colors disabled:bg-gray-300 disabled:text-gray-500"
             >
               {deletingRoomId === room.id ? 'Deleting...' : 'Delete'}
             </Button>
             <Button
               onClick={cancelDelete}
-              size="sm"
-              variant="outline"
-              className="flex-1 border-gray-200 rounded-lg hover:bg-gray-100 h-7"
+              variant="ghost"
+              className="flex-1 rounded-lg hover:bg-gray-100 h-8 text-sm font-medium text-gray-700 transition-colors"
             >
               Cancel
             </Button>
