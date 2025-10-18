@@ -3,11 +3,13 @@
 import { useState, useEffect } from 'react';
 import { MessageSquare } from 'lucide-react';
 import CreateRoomForm from './CreateRoomForm';
+import JoinRoomForm from './JoinRoomForm';
 import RoomActions from './RoomActions';
 import RoomItem from './RoomItem';
 
 const RoomList = ({ rooms, selectedRoom, onRoomSelect, onRoomCreate, onRoomDeleted }) => {
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [showJoinForm, setShowJoinForm] = useState(false);
 
   // Close menus when clicking outside
   useEffect(() => {
@@ -29,6 +31,17 @@ const RoomList = ({ rooms, selectedRoom, onRoomSelect, onRoomCreate, onRoomDelet
     setShowCreateForm(false);
   };
 
+  const handleCloseJoinForm = () => {
+    setShowJoinForm(false);
+  };
+
+  const handleRoomJoined = (room) => {
+    // Select the joined room
+    onRoomSelect(room);
+    // Reload room list
+    onRoomCreate();
+  };
+
   // แสดงห้องทั้งหมด
   const allRooms = rooms;
 
@@ -37,6 +50,7 @@ const RoomList = ({ rooms, selectedRoom, onRoomSelect, onRoomCreate, onRoomDelet
       {/* Action Buttons */}
       <RoomActions 
         onShowCreateForm={() => setShowCreateForm(!showCreateForm)}
+        onShowJoinForm={() => setShowJoinForm(!showJoinForm)}
       />
 
       {/* Create Room Form */}
@@ -47,6 +61,13 @@ const RoomList = ({ rooms, selectedRoom, onRoomSelect, onRoomCreate, onRoomDelet
         />
       )}
 
+      {/* Join Room Form */}
+      {showJoinForm && (
+        <JoinRoomForm 
+          onRoomJoin={handleRoomJoined}
+          onClose={handleCloseJoinForm}
+        />
+      )}
 
       {/* Room List */}
       <div className="flex-1 overflow-y-auto px-3 lg:px-4 pb-3 lg:pb-4">

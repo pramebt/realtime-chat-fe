@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Trash2, MoreVertical, Edit2, Check, X } from 'lucide-react';
+import { Trash2, MoreVertical, Edit2, Check, X, Users, Crown } from 'lucide-react';
 import { roomAPI } from '@/services/api';
 
 const RoomItem = ({ 
@@ -94,16 +94,22 @@ const RoomItem = ({
 
   // แสดงข้อมูลห้อง
   const getRoomSubtitle = (room) => {
-    return new Date(room.createdAt).toLocaleDateString('en-US', {
+    const dateStr = new Date(room.createdAt).toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric'
     });
+    
+    // แสดงจำนวนสมาชิก
+    const memberCount = room.members?.length || 0;
+    const ownerName = room.owner?.username || 'Unknown';
+    
+    return `${dateStr} • ${memberCount} members • Owner: ${ownerName}`;
   };
 
-  // ตรวจสอบสิทธิ์การลบห้อง
+  // ตรวจสอบสิทธิ์การลบห้อง (เฉพาะเจ้าของห้อง)
   const canDeleteRoom = (room) => {
-    // ห้องสาธารณะ: ทุกคนลบได้
-    return true;
+    // ต้องเป็นเจ้าของห้องเท่านั้น
+    return room.ownerId === room.owner?.id;
   };
 
   return (
@@ -154,16 +160,27 @@ const RoomItem = ({
         >
           <div className="flex items-center justify-between">
             <div className="flex-1 min-w-0">
-              <h3 className={`font-medium truncate text-sm lg:text-base ${
-                selectedRoom?.id === room.id ? 'text-primary' : 'text-gray-900'
-              }`}>
-                {room.name}
-              </h3>
+              <div className="flex items-center space-x-2">
+                <h3 className={`font-medium truncate text-sm lg:text-base ${
+                  selectedRoom?.id === room.id ? 'text-primary' : 'text-gray-900'
+                }`}>
+                  {room.name}
+                </h3>
+                {room.isPrivate && (
+                  <Crown className="h-3 w-3 text-yellow-500 flex-shrink-0" />
+                )}
+              </div>
               <p className={`text-xs lg:text-sm truncate ${
                 selectedRoom?.id === room.id ? 'text-primary/70' : 'text-gray-500'
               }`}>
                 {getRoomSubtitle(room)}
               </p>
+              <div className="flex items-center space-x-1 mt-1">
+                <Users className="h-3 w-3 text-gray-400" />
+                <span className="text-xs text-gray-400">
+                  Code: {room.code}
+                </span>
+              </div>
             </div>
             <div className="flex items-center space-x-2">
               <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
@@ -193,7 +210,12 @@ const RoomItem = ({
             </button>
             <button
               onClick={(e) => confirmDelete(room.id, e)}
-              className="w-full px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center"
+              disabled={!canDeleteRoom(room)}
+              className={`w-full px-3 py-2 text-left text-sm flex items-center ${
+                canDeleteRoom(room) 
+                  ? 'text-red-600 hover:bg-red-50' 
+                  : 'text-gray-400 cursor-not-allowed'
+              }`}
             >
               <Trash2 className="h-3 w-3 mr-2" />
               Delete

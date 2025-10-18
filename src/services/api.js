@@ -46,34 +46,39 @@ api.interceptors.response.use(
 
 // API functions สำหรับ Rooms
 export const roomAPI = {
-  // สร้างห้อง
+  // ✅ สร้างห้อง
   createRoom: async (name) => {
-    const response = await api.post('/api/rooms/create-room', { name });
+    const response = await api.post('/api/rooms', { name });
     return response.data;
   },
 
-  // ดึงรายการห้องทั้งหมด
+  // ✅ ดึงรายการห้องที่เห็นได้
   getRooms: async () => {
-    const response = await api.get('/api/rooms/get-rooms');
+    const response = await api.get('/api/rooms');
     return response.data;
   },
 
-  // อัปเดตห้อง
+  // ✅ เข้าร่วมห้องด้วยโค้ด
+  joinByCode: async (code) => {
+    const response = await api.post('/api/rooms/join', { code });
+    return response.data;
+  },
+
+  // ✅ อัปเดตชื่อห้อง
   updateRoom: async (id, name) => {
-    const response = await api.put(`/api/rooms/update-room/${id}`, { name });
+    const response = await api.put(`/api/rooms/${id}`, { name });
     return response.data;
   },
 
-  // ลบห้อง
+  // ✅ ลบห้อง
   deleteRoom: async (id) => {
-    const response = await api.delete(`/api/rooms/delete-room/${id}`);
+    const response = await api.delete(`/api/rooms/${id}`);
     return response.data;
   },
 };
-
 // API functions สำหรับ Messages
 export const messageAPI = {
-  // ส่งข้อความ
+  // ✅ ส่งข้อความ
   sendMessage: async (content, roomId, userId) => {
     const response = await api.post('/api/messages/send-message', {
       content,
@@ -83,7 +88,7 @@ export const messageAPI = {
     return response.data;
   },
 
-  // ดึงข้อความในห้อง
+  // ✅ ดึงข้อความในห้อง
   getMessages: async (roomId) => {
     const response = await api.get(`/api/messages/get-messages/${roomId}`);
     return response.data;
@@ -92,7 +97,7 @@ export const messageAPI = {
 
 // API functions สำหรับ Users
 export const userAPI = {
-  // ดึงข้อมูลโปรไฟล์
+  // ✅ ดึงข้อมูลโปรไฟล์
   getProfile: async () => {
     const response = await api.get('/api/auth/profile');
     return response.data;
