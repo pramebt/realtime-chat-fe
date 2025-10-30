@@ -40,7 +40,22 @@ class SocketService {
 
     return this.socket;
   }
-
+  // รายชื่อผู้ที่ออนไลน์เริ่มต้น
+  onOnlineUsers(callback) {
+    if (this.socket) {
+      this.socket.on('online-users', callback);
+    }
+  }
+  onlineUser(callback) {
+    if (this.socket) {
+      this.socket.on('user-online', callback);
+    }
+  }
+  offlineUser(callback) {
+    if (this.socket) {
+      this.socket.on('user-offline', callback);
+    }
+  }
   // ตัดการเชื่อมต่อ
   disconnect() {
     if (this.socket) {
@@ -101,7 +116,7 @@ class SocketService {
       this.socket.on('error', callback);
     }
   }
-
+ 
   // ส่งการแจ้งเตือนว่ากำลังพิมพ์
   startTyping(roomId) {
     if (this.socket && this.isConnected) {
@@ -122,13 +137,54 @@ class SocketService {
       this.socket.on('user_typing', callback);
     }
   }
-
+ 
   // ฟังเมื่อมีคนหยุดพิมพ์
   onUserStopTyping(callback) {
     if (this.socket) {
       this.socket.on('user_stop_typing', callback);
     }
   }
+  // ฟังเมื่อมีคนอ่านข้อความ
+  onReadMessage(callback) {
+    if (this.socket) {
+      this.socket.on('message-read', callback);
+    }
+  }
+
+  // แจ้งว่าอ่านข้อความแล้ว
+  readMessage(messageId) {
+    if (this.socket && this.isConnected) {
+      this.socket.emit('read-message', { messageId });
+    }
+  }
+
+  // แก้ไขข้อความผ่าน socket
+  editMessage(messageId, content) {
+    if (this.socket && this.isConnected) {
+      this.socket.emit('edit-message', { messageId, content });
+    }
+  }
+
+  // ลบข้อความผ่าน socket
+  deleteMessage(messageId) {
+    if (this.socket && this.isConnected) {
+      this.socket.emit('delete-message', { messageId });
+    }
+  }
+
+  // ฟังผลลัพธ์การแก้ไข/ลบข้อความ
+  onMessageEdited(callback) {
+    if (this.socket) {
+      this.socket.on('message-edited', callback);
+    }
+  }
+
+  onMessageDeleted(callback) {
+    if (this.socket) {
+      this.socket.on('message-deleted', callback);
+    }
+  }
+
 
   // ลบ event listeners
   removeAllListeners() {

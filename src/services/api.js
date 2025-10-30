@@ -93,6 +93,21 @@ export const messageAPI = {
     const response = await api.get(`/api/messages/get-messages/${roomId}`);
     return response.data;
   },
+  // ✅ แก้ไขข้อความ
+  editMessage: async (id, content) => {
+    const response = await api.put(`/api/messages/edit-message/${id}` , { content });
+    return response.data;
+  },
+  // ✅ ลบข้อความ
+  deleteMessage: async (id) => {
+    const response = await api.delete(`/api/messages/delete-message/${id}`);
+    return response.data;
+  },
+  // ✅ ทำเครื่องหมายว่าอ่านแล้ว
+  readMessage: async (id) => {
+    const response = await api.post(`/api/messages/read-message/${id}`);
+    return response.data;
+  },
 };
 
 // API functions สำหรับ Users

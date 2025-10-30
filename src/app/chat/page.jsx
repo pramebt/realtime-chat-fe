@@ -19,6 +19,7 @@ const ChatPage = () => {
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [typingUsers, setTypingUsers] = useState([]);
+  const [onlineUsers, setOnlineUsers] = useState(new Set());
 
   // Load rooms on mount
   useEffect(() => {
@@ -29,10 +30,14 @@ const ChatPage = () => {
   useEffect(() => {
     if (token) {
       socketService.connect(token);
-      
+       
       // Listen for new messages
       socketService.onReceiveMessage((message) => {
         setMessages(prev => [...prev, message]);
+        // mark as read for messages from others
+        if (message?.id && message?.user?.id !== user?.id) {
+          socketService.readMessage(message.id);
+        }
       });
 
       // Listen for user joined
@@ -66,6 +71,40 @@ const ChatPage = () => {
 
       socketService.onUserStopTyping((data) => {
         setTypingUsers(prev => prev.filter(u => u.userId !== data.userId));
+      });
+
+      // Presence
+      // Mark self online immediately
+      setOnlineUsers(prev => new Set(prev).add(user?.id));
+      // Seed initial list from server
+      socketService.onOnlineUsers(({ userIds = [] }) => {
+        setOnlineUsers(new Set(userIds));
+      });
+      // Live updates
+      socketService.onlineUser(({ userId }) => {
+        setOnlineUsers(prev => new Set(prev).add(userId));
+      });
+      socketService.offlineUser(({ userId }) => {
+        setOnlineUsers(prev => {
+          const next = new Set(prev);
+          next.delete(userId);
+          return next;
+        });
+      });
+
+      // Listen for message edited
+      socketService.onMessageEdited((updated) => {
+        setMessages(prev => prev.map(m => m.id === updated.id ? { ...m, ...updated } : m));
+      });
+
+      // Listen for message deleted
+      socketService.onMessageDeleted((deleted) => {
+        setMessages(prev => prev.map(m => m.id === deleted.id ? { ...m, ...deleted } : m));
+      });
+
+      // Listen for read receipts
+      socketService.onReadMessage(({ messageId, readers }) => {
+        setMessages(prev => prev.map(m => m.id === messageId ? { ...m, readers } : m));
       });
     }
 
@@ -122,6 +161,17 @@ const ChatPage = () => {
       socketService.sendMessage(selectedRoom.id, message.trim());
     }
   };
+
+  // helper: mark all messages as read when opening room
+  useEffect(() => {
+    if (selectedRoom && messages?.length) {
+      messages.forEach(msg => {
+        if (msg?.id && msg?.user?.id !== user?.id) {
+          socketService.readMessage(msg.id);
+        }
+      });
+    }
+  }, [selectedRoom, messages, user?.id]);
 
   const handleLogout = () => {
     socketService.disconnect();
@@ -197,11 +247,12 @@ const ChatPage = () => {
                 <h2 className="text-base lg:text-lg font-medium text-gray-900 truncate">
                   {selectedRoom.name}
                 </h2>
+                <span className="ml-2 text-xs text-gray-500">Online: {onlineUsers.size}</span>
               </div>
 
               {/* Messages */}
               <div className="flex-1 bg-gray-50">
-                <MessageList messages={messages} currentUser={user} typingUsers={typingUsers} />
+                <MessageList messages={messages} currentUser={user} typingUsers={typingUsers} onlineUsers={onlineUsers} />
               </div>
 
               {/* Message Input */}

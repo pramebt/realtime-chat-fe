@@ -3,13 +3,16 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import socketService from '../../services/socket';
 
-const MessageList = ({ messages, currentUser, typingUsers = [] }) => {
+const MessageList = ({ messages, currentUser, typingUsers = [], onlineUsers = new Set() }) => {
   const messagesEndRef = useRef(null);
   const scrollContainerRef = useRef(null);
   const [showTimestamp, setShowTimestamp] = useState({});
   const [showScrollToBottom, setShowScrollToBottom] = useState(false);
   const [isAutoScroll, setIsAutoScroll] = useState(true);
+  const [editingMessageId, setEditingMessageId] = useState(null);
+  const [draftContent, setDraftContent] = useState('');
 
   // Scroll to bottom function
   const scrollToBottom = useCallback((behavior = 'smooth') => {
@@ -51,6 +54,27 @@ const MessageList = ({ messages, currentUser, typingUsers = [] }) => {
       ...prev,
       [messageId]: !prev[messageId]
     }));
+  };
+
+  const startEdit = (message) => {
+    setEditingMessageId(message.id);
+    setDraftContent(message.content || '');
+  };
+
+  const cancelEdit = () => {
+    setEditingMessageId(null);
+    setDraftContent('');
+  };
+
+  const saveEdit = (id) => {
+    const content = draftContent.trim();
+    if (!content) return;
+    socketService.editMessage(id, content);
+    cancelEdit();
+  };
+
+  const deleteMsg = (id) => {
+    socketService.deleteMessage(id);
   };
 
   const formatTime = (timestamp) => {
@@ -128,6 +152,7 @@ const MessageList = ({ messages, currentUser, typingUsers = [] }) => {
               {dayMessages.map((message, index) => {
                 const isCurrentUser = currentUser?.id === message.user?.id;
                 const showAvatar = true; // แสดง avatar ทุกข้อความ
+                const isOnline = onlineUsers?.has?.(message.user?.id);
 
                 return (
                   <div
@@ -137,12 +162,15 @@ const MessageList = ({ messages, currentUser, typingUsers = [] }) => {
                     <div className={`flex max-w-[85%] lg:max-w-md ${isCurrentUser ? 'flex-row-reverse' : 'flex-row'}`}>
                       {/* Avatar */}
                       {showAvatar && (
-                        <div className={`flex-shrink-0 ${isCurrentUser ? 'ml-2 lg:ml-2' : 'mr-2 lg:mr-2'}`}>
+                        <div className={`flex-shrink-0 ${isCurrentUser ? 'ml-2 lg:ml-2' : 'mr-2 lg:mr-2'} relative`}>
                           <Avatar className="h-8 w-8 lg:h-10 lg:w-10">
                             <AvatarFallback className="text-xs bg-gray-200 text-gray-600">
                               {message.user?.username?.charAt(0).toUpperCase() || '?'}
                             </AvatarFallback>
                           </Avatar>
+                          {isOnline && (
+                            <span className="absolute -bottom-1 -right-1 h-3 w-3 bg-green-500 rounded-full border-2 border-white" />
+                          )}
                         </div>
                       )}
 
@@ -162,8 +190,34 @@ const MessageList = ({ messages, currentUser, typingUsers = [] }) => {
                           }`}
                           onClick={() => toggleTimestamp(message.id)}
                         >
-                          <p className="text-sm lg:text-base break-words leading-relaxed">{message.content}</p>
+                          {editingMessageId === message.id ? (
+                            <div className="flex items-center gap-2">
+                              <input
+                                value={draftContent}
+                                onChange={(e) => setDraftContent(e.target.value)}
+                                className={`w-full bg-transparent outline-none ${isCurrentUser ? 'placeholder:text-primary-foreground/80' : 'placeholder:text-gray-500'}`}
+                                placeholder="Edit message"
+                              />
+                              <Button size="sm" variant={isCurrentUser ? 'secondary' : 'default'} onClick={() => saveEdit(message.id)}>Save</Button>
+                              <Button size="sm" variant="ghost" onClick={cancelEdit}>Cancel</Button>
+                            </div>
+                          ) : (
+                            <p className="text-sm lg:text-base break-words leading-relaxed">
+                              {message.content}
+                              {message.editedAt && (
+                                <span className="ml-2 text-[10px] opacity-80 italic">(edited)</span>
+                              )}
+                            </p>
+                          )}
                         </div>
+
+                        {/* Actions for own messages */}
+                        {isCurrentUser && editingMessageId !== message.id && !message.isDeleted && (
+                          <div className="flex gap-2 mt-1">
+                            <Button size="xs" variant="ghost" onClick={() => startEdit(message)}>Edit</Button>
+                            <Button size="xs" variant="ghost" onClick={() => deleteMsg(message.id)}>Delete</Button>
+                          </div>
+                        )}
 
                         {/* Timestamp - แสดงเมื่อคลิก */}
                         {showTimestamp[message.id] && (
@@ -171,6 +225,13 @@ const MessageList = ({ messages, currentUser, typingUsers = [] }) => {
                             <div className="bg-gray-100 rounded px-2 py-1 inline-block">
                               {formatDateTime(message.timestamp || message.createdAt)}
                             </div>
+                          </div>
+                        )}
+
+                        {/* Read receipts for own messages */}
+                        {isCurrentUser && Array.isArray(message.readers) && message.readers.length > 0 && (
+                          <div className="text-[10px] text-gray-400 mt-1 px-1">
+                            Read by {message.readers.length}
                           </div>
                         )}
                       </div>
