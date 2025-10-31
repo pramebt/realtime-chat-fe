@@ -232,7 +232,7 @@ const ChatPage = () => {
           {selectedRoom ? (
             <>
               {/* Chat Header */}
-              <div className="p-4 lg:p-6 border-b border-gray-100 bg-white flex items-center gap-3">
+              <div className="p-4 lg:p-5 border-b border-gray-100 bg-white flex items-center gap-3">
                 {/* Back button for mobile */}
                 <Button
                   onClick={() => setSelectedRoom(null)}
@@ -244,10 +244,10 @@ const ChatPage = () => {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                   </svg>
                 </Button>
-                <h2 className="text-base lg:text-lg font-medium text-gray-900 truncate">
+                <h2 className="text-base lg:text-lg font-semibold text-gray-900 truncate">
                   {selectedRoom.name}
                 </h2>
-                <span className="ml-2 text-xs text-gray-500">Online: {onlineUsers.size}</span>
+                <span className="ml-2 text-xs text-gray-500">{onlineUsers.size} online</span>
               </div>
 
               {/* Messages */}

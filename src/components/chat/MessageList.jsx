@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import { Edit2, Trash2 } from 'lucide-react';
 import socketService from '../../services/socket';
 
 const MessageList = ({ messages, currentUser, typingUsers = [], onlineUsers = new Set(), roomId }) => {
@@ -11,6 +12,7 @@ const MessageList = ({ messages, currentUser, typingUsers = [], onlineUsers = ne
   const [editingMessageId, setEditingMessageId] = useState(null);
   const [draftContent, setDraftContent] = useState('');
   const initialScrollDoneRef = useRef(false);
+  const [actionsVisibleFor, setActionsVisibleFor] = useState(null);
 
   // Scroll helpers
   const AUTO_SCROLL_THRESHOLD_PX = 16;
@@ -150,18 +152,30 @@ const MessageList = ({ messages, currentUser, typingUsers = [], onlineUsers = ne
             </div>
 
             {/* Messages for this date */}
-            <div className="space-y-3">
+            <div className="space-y-1.5">
               {dayMessages.map((message, index) => {
                 const isCurrentUser = currentUser?.id === message.user?.id;
-                const showAvatar = true; // แสดง avatar ทุกข้อความ
+                const prev = index > 0 ? dayMessages[index - 1] : null;
+                const next = index < dayMessages.length - 1 ? dayMessages[index + 1] : null;
+                const isFirstInGroup = !prev || prev.user?.id !== message.user?.id;
+                const isLastInGroup = !next || next.user?.id !== message.user?.id;
+                const showAvatar = !isCurrentUser && isLastInGroup;
                 const isOnline = onlineUsers?.has?.(message.user?.id);
+
+                const bubbleColor = isCurrentUser ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-900';
+                const bubbleShape = (() => {
+                  if (isFirstInGroup && isLastInGroup) return 'rounded-2xl';
+                  if (isFirstInGroup) return isCurrentUser ? 'rounded-2xl rounded-br-md' : 'rounded-2xl rounded-bl-md';
+                  if (isLastInGroup) return isCurrentUser ? 'rounded-2xl rounded-tr-md' : 'rounded-2xl rounded-tl-md';
+                  return 'rounded-xl';
+                })();
 
                 return (
                   <div
                     key={message.id}
-                    className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'} mt-3 lg:mt-4`}
+                    className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'} ${isFirstInGroup ? 'mt-3 lg:mt-4' : 'mt-1'}`}
                   >
-                    <div className={`flex max-w-[85%] lg:max-w-md ${isCurrentUser ? 'flex-row-reverse' : 'flex-row'}`}>
+                    <div className={`flex max-w-[80%] ${isCurrentUser ? 'flex-row-reverse' : 'flex-row'}`}>
                       {/* Avatar */}
                       {showAvatar && (
                         <div className={`flex-shrink-0 ${isCurrentUser ? 'ml-2 lg:ml-2' : 'mr-2 lg:mr-2'} relative`}>
@@ -175,29 +189,36 @@ const MessageList = ({ messages, currentUser, typingUsers = [], onlineUsers = ne
                           )}
                         </div>
                       )}
+                      {/* Keep left indent consistent when avatar hidden for grouped messages */}
+                      {!isCurrentUser && !showAvatar && (
+                        <div className="flex-shrink-0 mr-2 lg:mr-2" style={{ width: '2rem' }} />
+                      )}
 
                       {/* Message Content */}
                       <div className={`flex flex-col ${isCurrentUser ? 'items-end' : 'items-start'}`}>
-                        {/* Username */}
-                        <div className={`text-xs text-gray-500 mb-1 px-1 ${isCurrentUser ? 'text-right' : 'text-left'}`}>
-                          {message.user?.username}
-                        </div>
+                        {/* Username: show only for others and first in group */}
+                        {!isCurrentUser && isFirstInGroup && (
+                          <div className={`text-xs text-gray-500 mb-1 px-1 ${isCurrentUser ? 'text-right' : 'text-left'}`}>
+                            {message.user?.username}
+                          </div>
+                        )}
 
                         {/* Message Bubble */}
                         <div 
-                          className={`max-w-full rounded-2xl px-3 lg:px-4 py-2 cursor-pointer transition-all duration-200 hover:shadow-md ${
-                            isCurrentUser
-                              ? 'bg-primary text-primary-foreground hover:bg-primary/90'
-                              : 'bg-white text-gray-900 shadow-sm border border-gray-100 hover:shadow-lg'
-                          }`}
-                          onClick={() => toggleTimestamp(message.id)}
+                          className={`max-w-full ${bubbleShape} px-3 lg:px-4 py-2 cursor-pointer transition-colors duration-150 ${bubbleColor}`}
+                          onClick={() => {
+                            toggleTimestamp(message.id);
+                            if (isCurrentUser) {
+                              setActionsVisibleFor(prev => prev === message.id ? null : message.id);
+                            }
+                          }}
                         >
                           {editingMessageId === message.id ? (
                             <div className="flex items-center gap-2">
                               <input
                                 value={draftContent}
                                 onChange={(e) => setDraftContent(e.target.value)}
-                                className={`w-full bg-transparent outline-none ${isCurrentUser ? 'placeholder:text-primary-foreground/80' : 'placeholder:text-gray-500'}`}
+                                className={`w-full bg-transparent outline-none ${isCurrentUser ? 'placeholder:text-white/80' : 'placeholder:text-gray-500'}`}
                                 placeholder="Edit message"
                               />
                               <Button size="sm" variant={isCurrentUser ? 'secondary' : 'default'} onClick={() => saveEdit(message.id)}>Save</Button>
@@ -214,27 +235,27 @@ const MessageList = ({ messages, currentUser, typingUsers = [], onlineUsers = ne
                         </div>
 
                         {/* Actions for own messages */}
-                        {isCurrentUser && editingMessageId !== message.id && !message.isDeleted && (
-                          <div className="flex gap-2 mt-1">
-                            <Button size="xs" variant="ghost" onClick={() => startEdit(message)}>Edit</Button>
-                            <Button size="xs" variant="ghost" onClick={() => deleteMsg(message.id)}>Delete</Button>
+                        {isCurrentUser && editingMessageId !== message.id && !message.isDeleted && actionsVisibleFor === message.id && (
+                          <div className="flex gap-1.5 mt-1">
+                            <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => startEdit(message)}>
+                              <Edit2 className="h-4 w-4" />
+                            </Button>
+                            <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => deleteMsg(message.id)}>
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
                           </div>
                         )}
 
                         {/* Timestamp - แสดงเมื่อคลิก */}
-                        {showTimestamp[message.id] && (
-                          <div className={`text-xs text-gray-400 mt-1 px-1 ${isCurrentUser ? 'text-right' : 'text-left'}`}>
-                            <div className="bg-gray-100 rounded px-2 py-1 inline-block">
-                              {formatDateTime(message.timestamp || message.createdAt)}
-                            </div>
+                        {isLastInGroup && (
+                          <div className={`text-[10px] mt-1 px-1 ${isCurrentUser ? 'text-right text-white/80' : 'text-left text-gray-400'}`}>
+                            {formatDateTime(message.timestamp || message.createdAt)}
                           </div>
                         )}
 
                         {/* Read receipts for own messages */}
-                        {isCurrentUser && Array.isArray(message.readers) && message.readers.length > 0 && (
-                          <div className="text-[10px] text-gray-400 mt-1 px-1">
-                            Read by {message.readers.length}
-                          </div>
+                        {isCurrentUser && Array.isArray(message.readers) && message.readers.length > 0 && isLastInGroup && (
+                          <div className="text-[10px] mt-0.5 px-1 text-blue-500">Read</div>
                         )}
                       </div>
                     </div>
