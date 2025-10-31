@@ -251,8 +251,8 @@ const ChatPage = () => {
               </div>
 
               {/* Messages */}
-              <div className="flex-1 bg-gray-50">
-                <MessageList messages={messages} currentUser={user} typingUsers={typingUsers} onlineUsers={onlineUsers} />
+              <div className="flex-1 bg-gray-50 min-h-0 overflow-hidden">
+                <MessageList roomId={selectedRoom?.id} messages={messages} currentUser={user} typingUsers={typingUsers} onlineUsers={onlineUsers} />
               </div>
 
               {/* Message Input */}

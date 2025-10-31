@@ -5,48 +5,57 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import socketService from '../../services/socket';
 
-const MessageList = ({ messages, currentUser, typingUsers = [], onlineUsers = new Set() }) => {
-  const messagesEndRef = useRef(null);
+const MessageList = ({ messages, currentUser, typingUsers = [], onlineUsers = new Set(), roomId }) => {
   const scrollContainerRef = useRef(null);
   const [showTimestamp, setShowTimestamp] = useState({});
-  const [showScrollToBottom, setShowScrollToBottom] = useState(false);
-  const [isAutoScroll, setIsAutoScroll] = useState(true);
   const [editingMessageId, setEditingMessageId] = useState(null);
   const [draftContent, setDraftContent] = useState('');
+  const initialScrollDoneRef = useRef(false);
 
-  // Scroll to bottom function
+  // Scroll helpers
+  const AUTO_SCROLL_THRESHOLD_PX = 16;
+
+  const isNearBottom = useCallback(() => {
+    if (!scrollContainerRef.current) return true;
+    const { scrollTop, scrollHeight, clientHeight } = scrollContainerRef.current;
+    return (scrollHeight - scrollTop - clientHeight) < AUTO_SCROLL_THRESHOLD_PX;
+  }, []);
+
   const scrollToBottom = useCallback((behavior = 'smooth') => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior });
+    if (scrollContainerRef.current) {
+      const el = scrollContainerRef.current;
+      if (behavior === 'smooth' && 'scrollTo' in el) {
+        el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+      } else {
+        el.scrollTop = el.scrollHeight;
+      }
     }
   }, []);
 
-  // Check if user is near bottom of scroll
+  // Check if user is near bottom of scroll (helper)
   const checkScrollPosition = useCallback(() => {
-    if (!scrollContainerRef.current) return;
-    
-    const { scrollTop, scrollHeight, clientHeight } = scrollContainerRef.current;
-    const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
-    
-    setShowScrollToBottom(!isNearBottom);
-    setIsAutoScroll(isNearBottom);
-  }, []);
+    return isNearBottom();
+  }, [isNearBottom]);
 
-  // Scroll to bottom when new messages arrive or typing users change
+  // Reset initial scroll flag when room changes
   useEffect(() => {
-    if (isAutoScroll) {
+    initialScrollDoneRef.current = false;
+  }, [roomId]);
+
+  // On first messages load after room change, force scroll to bottom once.
+  // After that, only auto-scroll when user is near bottom.
+  useEffect(() => {
+    if (!initialScrollDoneRef.current && messages && messages.length > 0) {
+      scrollToBottom('auto');
+      initialScrollDoneRef.current = true;
+      return;
+    }
+    if (isNearBottom()) {
       scrollToBottom('smooth');
     }
-  }, [messages, typingUsers, isAutoScroll, scrollToBottom]);
+  }, [messages, typingUsers, isNearBottom, scrollToBottom]);
 
-  // Handle scroll events
-  useEffect(() => {
-    const scrollContainer = scrollContainerRef.current;
-    if (!scrollContainer) return;
-
-    scrollContainer.addEventListener('scroll', checkScrollPosition);
-    return () => scrollContainer.removeEventListener('scroll', checkScrollPosition);
-  }, [checkScrollPosition]);
+  // No scroll listener needed since we compute position on-demand
 
   // Toggle timestamp visibility
   const toggleTimestamp = (messageId) => {
@@ -77,14 +86,7 @@ const MessageList = ({ messages, currentUser, typingUsers = [], onlineUsers = ne
     socketService.deleteMessage(id);
   };
 
-  const formatTime = (timestamp) => {
-    const date = new Date(timestamp);
-    return date.toLocaleTimeString('en-US', {
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit'
-    });
-  };
+  // Removed unused formatTime
 
   const formatDateTime = (timestamp) => {
     const date = new Date(timestamp);
@@ -124,11 +126,11 @@ const MessageList = ({ messages, currentUser, typingUsers = [], onlineUsers = ne
   }, {});
 
   return (
-    <div className="flex-1 relative h-full min-h-0">
+    <div className="h-full w-full flex flex-col overflow-hidden">
       {/* Scroll Container */}
       <div 
         ref={scrollContainerRef}
-        className="h-full overflow-y-auto overflow-x-hidden p-3 lg:p-4 space-y-3 lg:space-y-4 scroll-smooth scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400"
+        className="flex-1 overflow-y-auto overflow-x-hidden p-3 lg:p-4 space-y-3 lg:space-y-4 scroll-smooth scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400"
       >
       {Object.keys(groupedMessages).length === 0 ? (
         <div className="flex items-center justify-center h-full">
@@ -263,7 +265,7 @@ const MessageList = ({ messages, currentUser, typingUsers = [], onlineUsers = ne
         </div>
       )}
       
-      <div ref={messagesEndRef} />
+      {/* End anchor removed - using container scroll APIs */}
       </div>
 
       
