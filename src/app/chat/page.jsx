@@ -9,6 +9,7 @@ import MessageInput from '../../components/chat/MessageInput';
 import socketService from '../../services/socket';
 import { roomAPI, messageAPI } from '../../services/api';
 import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LogOut, MessageSquare } from 'lucide-react';
 
@@ -247,8 +248,27 @@ const ChatPage = () => {
                 <h2 className="text-base lg:text-lg font-semibold text-gray-900 truncate">
                   {selectedRoom.name}
                 </h2>
-                <span className="ml-2 text-xs text-gray-500">{onlineUsers.size} online</span>
+                
               </div>
+
+              {/* Online users in this room */}
+              {selectedRoom && (
+                <div className="px-4 lg:px-6 py-2 border-b border-gray-50 bg-white flex items-center gap-2 overflow-x-auto">
+                  {((selectedRoom.members || []).filter(m => onlineUsers.has(m.id))).map((m) => (
+                    <div key={m.id} className="relative">
+                      <Avatar className="h-6 w-6">
+                        <AvatarFallback className="text-[10px] bg-gray-200 text-gray-600">
+                          {m.username?.charAt(0).toUpperCase() || '?'}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 bg-green-500 rounded-full ring-2 ring-white" />
+                    </div>
+                  ))}
+                  <span className="text-xs text-gray-500 ml-1">
+                    {((selectedRoom.members || []).filter(m => onlineUsers.has(m.id)).length)} online
+                  </span>
+                </div>
+              )}
 
               {/* Messages */}
               <div className="flex-1 bg-gray-50 min-h-0 overflow-hidden">

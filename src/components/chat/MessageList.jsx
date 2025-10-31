@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Edit2, Trash2 } from "lucide-react";
+import MessageItem from "./MessageItem";
+import DateSeparator from "./DateSeparator";
+import TypingIndicator from "./TypingIndicator";
 import socketService from "../../services/socket";
 
 const MessageList = ({
@@ -18,7 +19,12 @@ const MessageList = ({
   const [editingMessageId, setEditingMessageId] = useState(null);
   const [draftContent, setDraftContent] = useState("");
   const initialScrollDoneRef = useRef(false);
+  const prevMessageCountRef = useRef(0);
+  const rafIdRef = useRef(null);
   const [actionsVisibleFor, setActionsVisibleFor] = useState(null);
+  const lastMessageRef = useRef(null);
+  const typingAnchorRef = useRef(null);
+  const prevTypingActiveRef = useRef(false);
 
   // Scroll helpers
   const AUTO_SCROLL_THRESHOLD_PX = 16;
@@ -52,17 +58,67 @@ const MessageList = ({
   }, [roomId]);
 
   // On first messages load after room change, force scroll to bottom once.
-  // After that, only auto-scroll when user is near bottom.
+  // After that, auto-scroll on new messages only when authored by self or user is near bottom.
   useEffect(() => {
-    if (!initialScrollDoneRef.current && messages && messages.length > 0) {
-      scrollToBottom("auto");
-      initialScrollDoneRef.current = true;
+    const count = messages?.length || 0;
+    if (count === 0) {
+      prevMessageCountRef.current = 0;
       return;
     }
-    if (isNearBottom()) {
-      scrollToBottom("smooth");
+
+    if (!initialScrollDoneRef.current) {
+      if (lastMessageRef.current?.scrollIntoView) {
+        lastMessageRef.current.scrollIntoView({ behavior: "auto", block: "end" });
+      } else {
+        scrollToBottom("auto");
+      }
+      initialScrollDoneRef.current = true;
+      prevMessageCountRef.current = count;
+      return;
     }
-  }, [messages, typingUsers, isNearBottom, scrollToBottom]);
+
+    if (count > prevMessageCountRef.current) {
+      const last = messages[count - 1];
+      const authoredBySelf = currentUser?.id && last?.user?.id === currentUser.id;
+      if (authoredBySelf || isNearBottom()) {
+        if (rafIdRef.current) cancelAnimationFrame(rafIdRef.current);
+        rafIdRef.current = requestAnimationFrame(() => {
+          if (lastMessageRef.current?.scrollIntoView) {
+            lastMessageRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
+          } else {
+            scrollToBottom("smooth");
+          }
+        });
+      }
+    }
+
+    prevMessageCountRef.current = count;
+  }, [messages, currentUser?.id, isNearBottom, scrollToBottom]);
+
+  // When typing indicator becomes visible (transition from none -> some), scroll it into view
+  useEffect(() => {
+    const active = Boolean(typingUsers?.length);
+    if (active && !prevTypingActiveRef.current) {
+      if (rafIdRef.current) cancelAnimationFrame(rafIdRef.current);
+      rafIdRef.current = requestAnimationFrame(() => {
+        if (typingAnchorRef.current?.scrollIntoView) {
+          typingAnchorRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
+        } else if (lastMessageRef.current?.scrollIntoView) {
+          lastMessageRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
+        } else {
+          scrollToBottom("smooth");
+        }
+      });
+    }
+    prevTypingActiveRef.current = active;
+  }, [typingUsers, scrollToBottom]);
+
+  // Cleanup any pending rAF
+  useEffect(() => {
+    return () => {
+      if (rafIdRef.current) cancelAnimationFrame(rafIdRef.current);
+    };
+  }, []);
 
   // No scroll listener needed since we compute position on-demand
 
@@ -135,13 +191,14 @@ const MessageList = ({
     groups[date].push(message);
     return groups;
   }, {});
+  const lastMessageId = messages?.length ? messages[messages.length - 1]?.id : null;
 
   return (
     <div className="h-full w-full flex flex-col overflow-hidden">
       {/* Scroll Container */}
       <div
         ref={scrollContainerRef}
-        className="flex-1 overflow-y-auto overflow-x-hidden p-3 lg:p-4 space-y-3 lg:space-y-4 scroll-smooth scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400"
+        className="flex-1 overflow-y-auto overflow-x-hidden p-3 lg:p-4 space-y-3 lg:space-y-4 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400"
       >
         {Object.keys(groupedMessages).length === 0 ? (
           <div className="flex items-center justify-center h-full">
@@ -158,13 +215,9 @@ const MessageList = ({
           Object.entries(groupedMessages).map(([date, dayMessages]) => (
             <div key={date}>
               {/* Date Separator */}
-              <div className="flex items-center justify-center my-4 lg:my-6">
-                <div className="bg-gray-200 text-gray-500 px-2 lg:px-3 py-1 rounded-full text-xs font-medium">
-                  {formatDate(
-                    dayMessages[0].timestamp || dayMessages[0].createdAt
-                  )}
-                </div>
-              </div>
+              <DateSeparator
+                label={formatDate(dayMessages[0].timestamp || dayMessages[0].createdAt)}
+              />
 
               {/* Messages for this date */}
               <div className="space-y-1.5">
@@ -199,169 +252,30 @@ const MessageList = ({
                   })();
 
                   return (
-                    <div
+                    <MessageItem
                       key={message.id}
-                      className={`flex ${
-                        isCurrentUser ? "justify-end" : "justify-start"
-                      } ${isFirstInGroup ? "mt-3 lg:mt-4" : "mt-1"}`}
-                    >
-                      <div
-                        className={`flex max-w-[80%] ${
-                          isCurrentUser ? "flex-row-reverse" : "flex-row"
-                        }`}
-                      >
-                        {/* Avatar */}
-                        {showAvatar && (
-                          <div
-                            className={`flex-shrink-0 ${
-                              isCurrentUser ? "ml-2 lg:ml-2" : "mr-2 lg:mr-2"
-                            } relative`}
-                          >
-                            <Avatar className="h-8 w-8 lg:h-10 lg:w-10 relative overflow-visible">
-                              <AvatarFallback className="text-xs bg-gray-200 text-gray-600">
-                                {message.user?.username
-                                  ?.charAt(0)
-                                  .toUpperCase() || "?"}
-                              </AvatarFallback>
-
-                              {isOnline && (
-                                <span className="absolute bottom-0 right-1 h-3 w-3 bg-green-500 rounded-full border-2 border-white z-20 translate-x-1/4 translate-y-1/4" />
-                              )}
-                            </Avatar>
-                          </div>
-                        )}
-                        {/* Keep left indent consistent when avatar hidden for grouped messages */}
-                        {!isCurrentUser && !showAvatar && (
-                          <div
-                            className="flex-shrink-0 mr-2 lg:mr-2"
-                            style={{ width: "2rem" }}
-                          />
-                        )}
-
-                        {/* Message Content */}
-                        <div
-                          className={`flex flex-col ${
-                            isCurrentUser ? "items-end" : "items-start"
-                          }`}
-                        >
-                          {/* Username: show only for others and first in group */}
-                          {!isCurrentUser && isFirstInGroup && (
-                            <div
-                              className={`text-xs text-gray-500 mb-1 px-1 ${
-                                isCurrentUser ? "text-right" : "text-left"
-                              }`}
-                            >
-                              {message.user?.username}
-                            </div>
-                          )}
-
-                          {/* Message Bubble */}
-                          <div
-                            className={`max-w-full ${bubbleShape} px-3 lg:px-4 py-2 cursor-pointer transition-colors duration-150 ${bubbleColor}`}
-                            onClick={() => {
-                              toggleTimestamp(message.id);
-                              if (isCurrentUser) {
-                                setActionsVisibleFor((prev) =>
-                                  prev === message.id ? null : message.id
-                                );
-                              }
-                            }}
-                          >
-                            {editingMessageId === message.id ? (
-                              <div className="flex items-center gap-2">
-                                <input
-                                  value={draftContent}
-                                  onChange={(e) =>
-                                    setDraftContent(e.target.value)
-                                  }
-                                  className={`w-full bg-transparent outline-none ${
-                                    isCurrentUser
-                                      ? "placeholder:text-white/80"
-                                      : "placeholder:text-gray-500"
-                                  }`}
-                                  placeholder="Edit message"
-                                />
-                                <Button
-                                  size="sm"
-                                  variant={
-                                    isCurrentUser ? "secondary" : "default"
-                                  }
-                                  onClick={() => saveEdit(message.id)}
-                                >
-                                  Save
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={cancelEdit}
-                                >
-                                  Cancel
-                                </Button>
-                              </div>
-                            ) : (
-                              <p className="text-sm lg:text-base break-words leading-relaxed">
-                                {message.content}
-                                {message.editedAt && (
-                                  <span className="ml-2 text-[10px] opacity-80 italic">
-                                    (edited)
-                                  </span>
-                                )}
-                              </p>
-                            )}
-                          </div>
-
-                          {/* Actions for own messages */}
-                          {isCurrentUser &&
-                            editingMessageId !== message.id &&
-                            !message.isDeleted &&
-                            actionsVisibleFor === message.id && (
-                              <div className="flex gap-1.5 mt-1">
-                                <Button
-                                  size="icon"
-                                  variant="ghost"
-                                  className="h-7 w-7"
-                                  onClick={() => startEdit(message)}
-                                >
-                                  <Edit2 className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  size="icon"
-                                  variant="ghost"
-                                  className="h-7 w-7"
-                                  onClick={() => deleteMsg(message.id)}
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            )}
-
-                          {/* Timestamp - แสดงเมื่อคลิก */}
-                          {showTimestamp[message.id] && (
-                            <div
-                              className={`text-[10px] mt-1 px-1 ${
-                                isCurrentUser
-                                  ? "text-right text-white/80"
-                                  : "text-left text-gray-400"
-                              }`}
-                            >
-                              {formatDateTime(
-                                message.timestamp || message.createdAt
-                              )}
-                            </div>
-                          )}
-
-                          {/* Read receipts for own messages */}
-                          {isCurrentUser &&
-                            Array.isArray(message.readers) &&
-                            message.readers.length > 0 &&
-                            isLastInGroup && (
-                              <div className="text-[10px] mt-0.5 px-1 text-blue-500">
-                                Read
-                              </div>
-                            )}
-                        </div>
-                      </div>
-                    </div>
+                      ref={message.id === lastMessageId ? lastMessageRef : undefined}
+                      message={message}
+                      currentUser={currentUser}
+                      isFirstInGroup={isFirstInGroup}
+                      isLastInGroup={isLastInGroup}
+                      showAvatar={showAvatar}
+                      isOnline={isOnline}
+                      isActionsVisible={actionsVisibleFor === message.id}
+                      showTimestamp={Boolean(showTimestamp[message.id])}
+                      onToggleTimestamp={(id) => toggleTimestamp(id)}
+                      onToggleActions={(id) =>
+                        setActionsVisibleFor((prev) => (prev === id ? null : id))
+                      }
+                      editingMessageId={editingMessageId}
+                      draftContent={draftContent}
+                      onChangeDraft={setDraftContent}
+                      onStartEdit={startEdit}
+                      onCancelEdit={cancelEdit}
+                      onSaveEdit={saveEdit}
+                      onDelete={deleteMsg}
+                      formatDateTime={formatDateTime}
+                    />
                   );
                 })}
               </div>
@@ -371,20 +285,7 @@ const MessageList = ({
 
         {/* Typing Indicator */}
         {typingUsers.length > 0 && (
-          <div className="flex justify-start mt-2">
-            <div className="flex items-center space-x-2 bg-gray-100 rounded-2xl px-3 py-2 max-w-xs">
-              <div className="flex space-x-1">
-                <div className="w-2 h-2 bg-gray-400 rounded-full typing-dot"></div>
-                <div className="w-2 h-2 bg-gray-400 rounded-full typing-dot"></div>
-                <div className="w-2 h-2 bg-gray-400 rounded-full typing-dot"></div>
-              </div>
-              <span className="text-xs text-gray-500">
-                {typingUsers.length === 1
-                  ? `${typingUsers[0].username} is typing...`
-                  : `${typingUsers.length} people are typing...`}
-              </span>
-            </div>
-          </div>
+          <TypingIndicator ref={typingAnchorRef} typingUsers={typingUsers} />
         )}
 
         {/* End anchor removed - using container scroll APIs */}
