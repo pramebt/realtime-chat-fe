@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Trash2, MoreVertical, Edit2, Check, X, Users, Crown } from 'lucide-react';
 import { roomAPI } from '@/services/api';
+import { useAuth } from '../../contexts/AuthContext';
 import { toast } from 'sonner';
 
 const RoomItem = ({ 
@@ -14,6 +15,7 @@ const RoomItem = ({
   onRoomCreate, 
   onRoomDeleted 
 }) => {
+  const { user } = useAuth();
   const [editingRoomId, setEditingRoomId] = useState(null);
   const [editRoomName, setEditRoomName] = useState('');
   const [showRoomMenu, setShowRoomMenu] = useState(null);
@@ -109,8 +111,8 @@ const RoomItem = ({
 
   // ตรวจสอบสิทธิ์การลบห้อง (เฉพาะเจ้าของห้อง)
   const canDeleteRoom = (room) => {
-    // ต้องเป็นเจ้าของห้องเท่านั้น
-    return room.ownerId === room.owner?.id;
+    // เจ้าของห้องเท่านั้น (เทียบกับผู้ใช้ปัจจุบัน)
+    return user?.id && room?.owner?.id && user.id === room.owner.id;
   };
 
   return (
@@ -206,7 +208,7 @@ const RoomItem = ({
               Edit
             </button>
             <button
-              onClick={(e) => confirmDelete(room.id, e)}
+              onClick={(e) => canDeleteRoom(room) ? confirmDelete(room.id, e) : e.preventDefault()}
               disabled={!canDeleteRoom(room)}
               className={`w-full px-3 py-2 text-left text-sm flex items-center transition-colors ${
                 canDeleteRoom(room) 
