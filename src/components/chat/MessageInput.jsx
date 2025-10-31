@@ -56,7 +56,8 @@ const MessageInput = ({ onSendMessage, roomId }) => {
     }
   };
 
-  const handleKeyPress = (e) => {
+  const handleKeyDown = (e) => {
+    // Send on Enter (like Messenger), newline on Shift+Enter
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSubmit(e);
@@ -82,26 +83,38 @@ const MessageInput = ({ onSendMessage, roomId }) => {
 
   return (
     <form onSubmit={handleSubmit} className="p-3 lg:p-4">
-      <div className="flex items-end gap-2 lg:gap-3 bg-white border border-gray-200 rounded-full px-3 lg:px-4 py-2 shadow-sm">
-        <button type="button" className="p-1 text-gray-500 hover:text-gray-700">
+      <div className="flex items-center gap-1.5 lg:gap-2.5 bg-white border border-gray-200 rounded-full px-2.5 lg:px-3.5 py-1.5 lg:py-2 shadow-sm">
+        <button
+          type="button"
+          className="h-9 w-9 flex items-center justify-center rounded-full text-gray-600 hover:bg-gray-100 disabled:text-gray-400 disabled:hover:bg-transparent"
+          disabled={!roomId}
+          aria-label="Emoji"
+          title="Emoji"
+        >
           <Smile className="h-5 w-5" />
         </button>
-        <button type="button" className="p-1 text-gray-500 hover:text-gray-700">
+        <button
+          type="button"
+          className="h-9 w-9 flex items-center justify-center rounded-full text-gray-600 hover:bg-gray-100 disabled:text-gray-400 disabled:hover:bg-transparent"
+          disabled={!roomId}
+          aria-label="Attach"
+          title="Attach"
+        >
           <Paperclip className="h-5 w-5" />
         </button>
         <textarea
           ref={textareaRef}
           value={message}
           onChange={handleChange}
-          onKeyPress={handleKeyPress}
+          onKeyDown={handleKeyDown}
           placeholder="Write a message..."
           rows={1}
-          className="flex-1 resize-none bg-transparent outline-none text-sm lg:text-base placeholder:text-gray-400 max-h-32"
+          className="flex-1 resize-none bg-transparent outline-none text-[15px] lg:text-base leading-6 placeholder:text-gray-400 max-h-32 overflow-y-auto py-1"
         />
         <Button
           type="submit"
           size="icon"
-          disabled={!message.trim()}
+          disabled={!roomId || !message.trim()}
           className="h-9 w-9 lg:h-10 lg:w-10 bg-blue-500 hover:bg-blue-600 text-white rounded-full border-0 disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
         >
           <Send className="h-4 w-4" />
