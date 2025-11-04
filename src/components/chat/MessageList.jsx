@@ -24,7 +24,7 @@ const MessageList = ({
   const [actionsVisibleFor, setActionsVisibleFor] = useState(null);
   const lastMessageRef = useRef(null);
   const typingAnchorRef = useRef(null);
-  const prevTypingActiveRef = useRef(false);
+  const prevTypingActiveRef = useRef(false); 
 
   // Scroll helpers
   const AUTO_SCROLL_THRESHOLD_PX = 16;
