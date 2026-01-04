@@ -252,7 +252,7 @@ const ChatPage = () => {
               </div>
 
               {/* Online users in this room */}
-              {selectedRoom && (
+              {/* {selectedRoom && (
                 <div className="px-4 lg:px-6 py-2 border-b border-gray-50 bg-white flex items-center gap-2 overflow-x-auto">
                   {((selectedRoom.members || []).filter(m => onlineUsers.has(m.id))).map((m) => (
                     <div key={m.id} className="relative">
@@ -268,7 +268,7 @@ const ChatPage = () => {
                     {((selectedRoom.members || []).filter(m => onlineUsers.has(m.id)).length)} online
                   </span>
                 </div>
-              )}
+              )} */}
 
               {/* Messages */}
               <div className="flex-1 bg-gray-50 min-h-0 overflow-hidden">

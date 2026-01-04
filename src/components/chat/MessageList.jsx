@@ -288,7 +288,6 @@ const MessageList = ({
           <TypingIndicator ref={typingAnchorRef} typingUsers={typingUsers} />
         )}
 
-        {/* End anchor removed - using container scroll APIs */}
       </div>
     </div>
   );
